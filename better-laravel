@@ -414,7 +414,7 @@ cleanup_files() {
     for folder in "${CLEANUP_FOLDERS[@]}"; do
         if [ -d "$folder" ]; then
             rm -rf "$folder"
-            ((count++))
+            count=$((count + 1))
         fi
     done
     
@@ -422,7 +422,7 @@ cleanup_files() {
     for file in "${CLEANUP_FILES[@]}"; do
         if [ -f "$file" ]; then
             rm -f "$file"
-            ((count++))
+            count=$((count + 1))
         fi
     done
     
