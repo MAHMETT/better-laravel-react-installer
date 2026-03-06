@@ -7,24 +7,53 @@
 # Install globally by copying to /usr/local/bin/better-laravel
 # ==============================================================================
 
+# Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALLER_SCRIPT="$SCRIPT_DIR/installer.sh"
 
-# Check if installer script exists
-if [ ! -f "$INSTALLER_SCRIPT" ]; then
-    echo "Error: installer.sh not found at $INSTALLER_SCRIPT" >&2
+# Try to find installer.sh in multiple locations
+INSTALLER_SCRIPT=""
+
+# Check same directory as this script
+if [ -f "$SCRIPT_DIR/installer.sh" ]; then
+    INSTALLER_SCRIPT="$SCRIPT_DIR/installer.sh"
+# Check current directory
+elif [ -f "./installer.sh" ]; then
+    INSTALLER_SCRIPT="./installer.sh"
+# Check script directory with absolute path
+elif [ -f "/usr/local/bin/installer.sh" ]; then
+    INSTALLER_SCRIPT="/usr/local/bin/installer.sh"
+fi
+
+# If found, source it
+if [ -n "$INSTALLER_SCRIPT" ] && [ -f "$INSTALLER_SCRIPT" ]; then
+    source "$INSTALLER_SCRIPT"
+    
+    # Handle command execution
+    if [ $# -eq 0 ]; then
+        show_help
+        exit 0
+    fi
+    
+    main "$@"
+else
+    # Installer not found - show installation instructions
+    echo "Better Laravel React Installer"
+    echo ""
+    echo "The installer script (installer.sh) was not found."
+    echo ""
+    echo "Installation options:"
+    echo ""
+    echo "1. Run the installer directly:"
+    echo "   curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.sh | bash"
+    echo ""
+    echo "2. Or clone and run locally:"
+    echo "   git clone https://github.com/MAHMETT/better-laravel-react-installer.git"
+    echo "   cd better-laravel-react-installer"
+    echo "   ./better-laravel new"
+    echo ""
+    echo "3. Or download installer.sh to the same directory:"
+    echo "   curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/installer.sh -o $SCRIPT_DIR/installer.sh"
+    echo "   chmod +x $SCRIPT_DIR/installer.sh"
+    echo ""
     exit 1
 fi
-
-# Source the installer library
-source "$INSTALLER_SCRIPT"
-
-# Handle command execution
-if [ $# -eq 0 ]; then
-    # No arguments - show help
-    show_help
-    exit 0
-fi
-
-# Execute main with all arguments
-main "$@"

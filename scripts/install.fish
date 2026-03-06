@@ -109,9 +109,16 @@ function download_installer
     
     print_step "Downloading installer from GitHub..."
     
+    # Verify URL is set correctly
+    if test -z "$download_url"
+        print_error "Download URL is empty"
+        rm -rf "$temp_dir"
+        return 1
+    end
+    
     if command -q curl
         print_dim "Using curl to download from: $download_url"
-        if curl -fsSL -o "$temp_script" "$download_url" ^/dev/null
+        if curl -fsSL --url "$download_url" -o "$temp_script" ^/dev/null
             print_success "Downloaded using curl"
         else
             print_error "Failed to download with curl"

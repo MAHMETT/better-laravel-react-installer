@@ -123,10 +123,17 @@ download_installer() {
     
     print_step "Downloading installer from GitHub..."
     
+    # Verify URL is set
+    if [ -z "$download_url" ]; then
+        print_error "Download URL is empty"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+    
     # Try curl first, then wget
     if command -v curl >/dev/null 2>&1; then
         echo -e "  ${GRAY}Using curl to download from: $download_url${NC}"
-        if curl -fsSL -o "$temp_script" "$download_url" 2>/dev/null; then
+        if curl -fsSL --url "$download_url" -o "$temp_script" 2>/dev/null; then
             print_success "Downloaded using curl"
         else
             print_error "Failed to download with curl"
