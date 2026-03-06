@@ -28,7 +28,7 @@ readonly DEFAULT_RUNTIME="npm"
 readonly -a CLEANUP_FOLDERS=("docs" ".agents" ".claude" ".codex" ".qwen" ".git" ".github")
 
 # Files to remove during cleanup
-readonly -a CLEANUP_FILES=(".bunrc" "bun.lock" "mcp.json" "AGENTS.md" "CLAUDE.md" "QWEN.md" "boost.json" "_ide_helper.php" "opencode.json")
+readonly -a CLEANUP_FILES=(".bunrc" "bun.lock" ".mcp.json" "qwen.json" "mcp.json" "AGENTS.md" "CLAUDE.md" "QWEN.md" "boost.json" "_ide_helper.php" "opencode.json")
 
 # Colors
 readonly RED='\033[0;31m'
