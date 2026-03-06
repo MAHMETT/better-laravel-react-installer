@@ -23,6 +23,9 @@ readonly -a BRANCHES=(
     "+ visitor management|analytics-visitor"
 )
 
+# Available runtimes for dependency check
+readonly -a RUNTIMES=("npm" "pnpm" "yarn" "bun")
+
 # Files/folders to cleanup
 readonly -a CLEANUP_FOLDERS=("docs" ".agents" ".claude" ".codex" ".qwen" ".git" ".github")
 readonly -a CLEANUP_FILES=(".bunrc" "bun.lock" "mcp.json" "AGENTS.md" "CLAUDE.md" "QWEN.md" "boost.json" "_ide_helper.php" "opencode.json")
