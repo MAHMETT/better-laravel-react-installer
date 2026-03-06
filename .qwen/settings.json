@@ -1,0 +1,10 @@
+{
+  "theme": "Default",
+  "selectedAuthType": "oauth",
+  "enableUsageStats": false,
+  "autoAccept": false,
+  "allowedTools": [],
+  "blockedTools": [],
+  "alwaysAllow": [],
+  "customInstructions": ""
+}
