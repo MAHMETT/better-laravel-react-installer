@@ -9,26 +9,49 @@
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Try to find installer.sh in multiple locations
 INSTALLER_SCRIPT=""
 
-# Check same directory as this script
+# Try to find installer.sh in multiple locations
 if [ -f "$SCRIPT_DIR/installer.sh" ]; then
+    # Same directory as this script
     INSTALLER_SCRIPT="$SCRIPT_DIR/installer.sh"
-# Check current directory
-elif [ -f "./installer.sh" ]; then
-    INSTALLER_SCRIPT="./installer.sh"
-# Check script directory with absolute path
-elif [ -f "/usr/local/bin/installer.sh" ]; then
-    INSTALLER_SCRIPT="/usr/local/bin/installer.sh"
+elif [ -f "$(pwd)/installer.sh" ]; then
+    # Current working directory
+    INSTALLER_SCRIPT="$(pwd)/installer.sh"
+elif [ -f "$HOME/.better-laravel/installer.sh" ]; then
+    # User home directory
+    INSTALLER_SCRIPT="$HOME/.better-laravel/installer.sh"
 fi
 
-# If found, source it
+# Function to download installer.sh
+download_installer() {
+    local temp_dir=$(mktemp -d)
+    local raw_url="https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main"
+    
+    echo "Downloading installer..."
+    
+    if command -v curl >/dev/null 2>&1; then
+        if curl -fsSL -o "$temp_dir/installer.sh" "$raw_url/installer.sh" 2>/dev/null; then
+            chmod +x "$temp_dir/installer.sh"
+            echo "$temp_dir/installer.sh"
+            return 0
+        fi
+    elif command -v wget >/dev/null 2>&1; then
+        if wget -q -O "$temp_dir/installer.sh" "$raw_url/installer.sh" 2>/dev/null; then
+            chmod +x "$temp_dir/installer.sh"
+            echo "$temp_dir/installer.sh"
+            return 0
+        fi
+    fi
+    
+    rm -rf "$temp_dir"
+    return 1
+}
+
+# If installer found locally, use it
 if [ -n "$INSTALLER_SCRIPT" ] && [ -f "$INSTALLER_SCRIPT" ]; then
     source "$INSTALLER_SCRIPT"
     
-    # Handle command execution
     if [ $# -eq 0 ]; then
         show_help
         exit 0
@@ -36,24 +59,54 @@ if [ -n "$INSTALLER_SCRIPT" ] && [ -f "$INSTALLER_SCRIPT" ]; then
     
     main "$@"
 else
-    # Installer not found - show installation instructions
-    echo "Better Laravel React Installer"
-    echo ""
-    echo "The installer script (installer.sh) was not found."
-    echo ""
-    echo "Installation options:"
-    echo ""
-    echo "1. Run the installer directly:"
-    echo "   curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.sh | bash"
-    echo ""
-    echo "2. Or clone and run locally:"
-    echo "   git clone https://github.com/MAHMETT/better-laravel-react-installer.git"
-    echo "   cd better-laravel-react-installer"
-    echo "   ./better-laravel new"
-    echo ""
-    echo "3. Or download installer.sh to the same directory:"
-    echo "   curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/installer.sh -o $SCRIPT_DIR/installer.sh"
-    echo "   chmod +x $SCRIPT_DIR/installer.sh"
-    echo ""
-    exit 1
+    # Try to download installer temporarily
+    DOWNLOADED_INSTALLER=$(download_installer)
+    
+    if [ -n "$DOWNLOADED_INSTALLER" ] && [ -f "$DOWNLOADED_INSTALLER" ]; then
+        source "$DOWNLOADED_INSTALLER"
+        
+        if [ $# -eq 0 ]; then
+            show_help
+            exit 0
+        fi
+        
+        main "$@"
+        EXIT_CODE=$?
+        
+        # Cleanup
+        rm -rf "$(dirname "$DOWNLOADED_INSTALLER")"
+        exit $EXIT_CODE
+    else
+        # Show installation instructions
+        echo ""
+        echo -e "\033[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+        echo -e "\033[1;36m   Better Laravel React Installer\033[0m"
+        echo -e "\033[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+        echo ""
+        echo -e "\033[0;33m⚠ Installer script not found\033[0m"
+        echo ""
+        echo "The installer script (installer.sh) was not found locally."
+        echo ""
+        echo -e "\033[1;36mQuick Start:\033[0m"
+        echo ""
+        echo "  Run the installation directly:"
+        echo -e "  \033[0;90mcurl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.sh | bash\033[0m"
+        echo ""
+        echo -e "\033[1;36mOr create a new project:\033[0m"
+        echo ""
+        echo "  better-laravel new"
+        echo ""
+        echo -e "\033[1;36mManual installation:\033[0m"
+        echo ""
+        echo "  1. Clone the repository:"
+        echo -e "     \033[0;90mgit clone https://github.com/MAHMETT/better-laravel-react-installer.git\033[0m"
+        echo -e "     \033[0;90mcd better-laravel-react-installer\033[0m"
+        echo ""
+        echo "  2. Run locally:"
+        echo -e "     \033[0;90m./better-laravel new\033[0m"
+        echo ""
+        echo -e "\033[0;90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+        echo ""
+        exit 1
+    fi
 fi

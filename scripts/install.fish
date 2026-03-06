@@ -3,9 +3,10 @@
 # Install script for fish shell
 # =================================================================
 
-set -l INSTALL_DIR "/usr/local/bin"
-set -l INSTALLER_NAME "better-laravel"
-set -l RAW_URL "https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main"
+# Global configuration variables (accessible in functions)
+set -g INSTALL_DIR "/usr/local/bin"
+set -g INSTALLER_NAME "better-laravel"
+set -g RAW_URL "https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main"
 
 # ANSI escape codes
 set -l RED "\e[31m"
@@ -19,40 +20,40 @@ set -l RESET "\e[0m"
 
 # Print functions
 function print_banner
-    printf '\n'
-    printf '%b%s%b\n' "$CYAN" "========================================" "$RESET"
-    printf '%b%s%b\n' "$BOLD$CYAN" "   Better Laravel React Installer" "$RESET"
-    printf '%b%s%b\n' "$CYAN" "========================================" "$RESET"
-    printf '%b%s%b\n' "$DIM" "Universal Shell Installation Script" "$RESET"
-    printf '\n'
+    printf '\n' >&2
+    printf '%b%s%b\n' "$CYAN" "========================================" "$RESET" >&2
+    printf '%b%s%b\n' "$BOLD$CYAN" "   Better Laravel React Installer" "$RESET" >&2
+    printf '%b%s%b\n' "$CYAN" "========================================" "$RESET" >&2
+    printf '%b%s%b\n' "$DIM" "Universal Shell Installation Script" "$RESET" >&2
+    printf '\n' >&2
 end
 
 function print_step -a msg
-    printf '%b[STEP]%b %s\n' "$GREEN" "$RESET" "$msg"
+    printf '%b[STEP]%b %s\n' "$GREEN" "$RESET" "$msg" >&2
 end
 
 function print_success -a msg
-    printf '%b✓%b %s\n' "$GREEN" "$RESET" "$msg"
+    printf '%b✓%b %s\n' "$GREEN" "$RESET" "$msg" >&2
 end
 
 function print_error -a msg
-    printf '%b✗%b %s\n' "$RED" "$RESET" "$msg"
+    printf '%b✗%b %s\n' "$RED" "$RESET" "$msg" >&2
 end
 
 function print_warning -a msg
-    printf '%b⚠%b %s\n' "$YELLOW" "$RESET" "$msg"
+    printf '%b⚠%b %s\n' "$YELLOW" "$RESET" "$msg" >&2
 end
 
 function print_info -a msg
-    printf '%bℹ%b %s\n' "$BLUE" "$RESET" "$msg"
+    printf '%bℹ%b %s\n' "$BLUE" "$RESET" "$msg" >&2
 end
 
 function print_dim -a msg
-    printf '%b%s%b\n' "$DIM" "$msg" "$RESET"
+    printf '%b%s%b\n' "$DIM" "$msg" "$RESET" >&2
 end
 
 function print_cyan -a msg
-    printf '%b%s%b\n' "$CYAN" "$msg" "$RESET"
+    printf '%b%s%b\n' "$CYAN" "$msg" "$RESET" >&2
 end
 
 # Detect shell from parent process
@@ -118,7 +119,7 @@ function download_installer
     
     if command -q curl
         print_dim "Using curl to download from: $download_url"
-        if curl -fsSL --url "$download_url" -o "$temp_script" ^/dev/null
+        if curl -fsSL "$download_url" -o "$temp_script" 2>/dev/null
             print_success "Downloaded using curl"
         else
             print_error "Failed to download with curl"
@@ -128,7 +129,7 @@ function download_installer
         end
     else if command -q wget
         print_dim "Using wget to download from: $download_url"
-        if wget -q -O "$temp_script" "$download_url" ^/dev/null
+        if wget -q -O "$temp_script" "$download_url" 2>/dev/null
             print_success "Downloaded using wget"
         else
             print_error "Failed to download with wget"
@@ -219,7 +220,7 @@ function add_to_path -a shell_name
     switch "$shell_name"
         case fish
             if test -f "$shell_config"
-                if not grep -q "fish_add_path.*$INSTALL_DIR" "$shell_config" ^/dev/null
+                if not grep -q "fish_add_path.*$INSTALL_DIR" "$shell_config" 2>/dev/null
                     echo "" >> "$shell_config"
                     echo "# Better Laravel React Installer" >> "$shell_config"
                     echo "fish_add_path $INSTALL_DIR" >> "$shell_config"
@@ -232,7 +233,7 @@ function add_to_path -a shell_name
             end
         case csh tcsh
             if test -f "$shell_config"
-                if not grep -q "set path.*$INSTALL_DIR" "$shell_config" ^/dev/null
+                if not grep -q "set path.*$INSTALL_DIR" "$shell_config" 2>/dev/null
                     echo "" >> "$shell_config"
                     echo "# Better Laravel React Installer" >> "$shell_config"
                     echo "set path = ($INSTALL_DIR \$path)" >> "$shell_config"
@@ -245,7 +246,7 @@ function add_to_path -a shell_name
             end
         case '*'
             if test -f "$shell_config"
-                if not grep -q "export PATH.*$INSTALL_DIR" "$shell_config" ^/dev/null
+                if not grep -q "export PATH.*$INSTALL_DIR" "$shell_config" 2>/dev/null
                     echo "" >> "$shell_config"
                     echo "# Better Laravel React Installer" >> "$shell_config"
                     echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$shell_config"
