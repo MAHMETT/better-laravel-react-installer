@@ -750,13 +750,23 @@ parse_cli_args() {
                 exit 0
                 ;;
             -*)
+                echo ""
                 echo -e "${RED}Unknown option: $1${RESET}"
-                echo -e "${DIM}Run 'better-laravel --help' to see available options.${RESET}"
+                echo ""
+                echo -e "Run:${RESET}"
+                echo -e "  better-laravel --help"
+                echo -e "to see available commands."
+                echo ""
                 exit 1
                 ;;
             *)
-                echo -e "${RED}Unknown argument: $1${RESET}"
-                echo -e "${DIM}Run 'better-laravel --help' to see available options.${RESET}"
+                echo ""
+                echo -e "${RED}Unknown command: $1${RESET}"
+                echo ""
+                echo -e "Run:${RESET}"
+                echo -e "  better-laravel --help"
+                echo -e "to see available commands."
+                echo ""
                 exit 1
                 ;;
         esac
@@ -766,12 +776,15 @@ parse_cli_args() {
 apply_cli_options() {
     CLI_MODE=true
     
-    # Apply runtime
     if [ -n "$CLI_RUNTIME" ]; then
         if command -v "$CLI_RUNTIME" &> /dev/null; then
             SELECTED_RUNTIME="$CLI_RUNTIME"
         else
-            echo -e "${RED}Error: $CLI_RUNTIME is not installed${RESET}"
+            echo ""
+            echo -e "${RED}Runtime $CLI_RUNTIME is not installed.${RESET}"
+            echo ""
+            echo -e "${DIM}Please install $CLI_RUNTIME or choose another runtime.${RESET}"
+            echo ""
             exit 1
         fi
     else
@@ -813,27 +826,27 @@ show_help() {
     echo -e "${BOLD}Usage${RESET}"
     echo -e "  better-laravel new [options]"
     echo ""
-    echo -e "${BOLD}Runtime Options${RESET}"
-    echo -e "  --npm        Use npm for node dependencies"
-    echo -e "  --pnpm       Use pnpm for node dependencies"
-    echo -e "  --yarn       Use yarn for node dependencies"
-    echo -e "  --bun        Use bun for node dependencies"
+    echo -e "${BOLD}Options${RESET}"
+    echo ""
+    echo -e "${BOLD}Runtime${RESET}"
+    echo -e "  --npm        Use npm runtime"
+    echo -e "  --pnpm       Use pnpm runtime"
+    echo -e "  --yarn       Use yarn runtime"
+    echo -e "  --bun        Use bun runtime"
     echo ""
     echo -e "${BOLD}Install Options${RESET}"
-    echo -e "  --install-all        Install composer and node dependencies"
-    echo -e "  --install-composer   Install composer dependencies only"
-    echo -e "  --install-node       Install node dependencies only"
-    echo -e "  --no-install         Skip dependency installation"
+    echo -e "  --install-all"
+    echo -e "  --install-composer"
+    echo -e "  --install-node"
+    echo -e "  --no-install"
     echo ""
-    echo -e "${BOLD}General Options${RESET}"
-    echo -e "  --branch <name>  Specify branch"
-    echo -e "  --help           Show this help message"
+    echo -e "${BOLD}General${RESET}"
+    echo -e "  --help       Show help information"
     echo ""
     echo -e "${BOLD}Examples${RESET}"
     echo -e "  better-laravel new"
     echo -e "  better-laravel new --bun"
     echo -e "  better-laravel new --pnpm --install-node"
-    echo -e "  better-laravel new --no-install"
 }
 
 # ==============================================================================

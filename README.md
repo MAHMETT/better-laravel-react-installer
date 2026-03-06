@@ -1,51 +1,50 @@
 # Better Laravel React Installer
 
-A modern, interactive CLI installer for the Better Laravel React starter kit.
+A CLI installer for the Better Laravel React starter kit.
 
 ## Overview
 
-Better Laravel React is a Laravel starter kit with React integration. This installer provides an interactive CLI to set up new projects with customizable options.
+This repository contains a CLI tool to set up Laravel projects with React integration. It provides an interactive installer with support for multiple Node.js package managers.
 
 ## Features
 
-- Interactive TUI with clean terminal interface
-- CLI flags for automation
-- Automatic dependency checking
-- Branch and runtime selection
-- Fail-safe installation with clear error messages
+- Interactive TUI installer
+- Runtime selection (npm, pnpm, yarn, bun)
+- Automated dependency installation
+- CLI flags support
+- Customizable installation workflow
 
-## Installation
+## Installing the CLI Installer
 
-### Bash/Zsh
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.sh | bash
-```
-
-### Fish Shell
+### Clone the source code
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.fish | fish
+git clone https://github.com/MAHMETT/better-laravel-react-installer.git /usr/local/bin/better-laravel
 ```
 
-### Zsh
+### Add the path to your shell
 
+**Bash:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.zsh | zsh
+echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-### Manual Installation
-
+**Zsh:**
 ```bash
-git clone https://github.com/MAHMETT/better-laravel-react-installer.git
-cd better-laravel-react-installer
-chmod +x installer.sh
-sudo mv installer.sh /usr/local/bin/better-laravel
+echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 ```
+
+**Fish:**
+```bash
+echo 'fish_add_path /usr/local/bin' >> ~/.config/fish/config.fish
+source ~/.config/fish/config.fish
+```
+
+This makes `better-laravel` available globally.
 
 ## Usage
-
-### Interactive Mode
 
 ```bash
 better-laravel
@@ -53,18 +52,11 @@ better-laravel
 
 Displays help documentation.
 
-### Create New Project
-
 ```bash
 better-laravel new
 ```
 
-The installer will:
-
-1. Prompt for project name
-2. Select branch
-3. Choose runtime
-4. Select dependencies to install
+Starts the interactive installer.
 
 Example workflow:
 
@@ -72,25 +64,23 @@ Example workflow:
 ~/Projects
 $ better-laravel new
 
-Enter project name: my-app
-
-[Installation proceeds...]
+Enter project name: testing
 ```
 
-Creates project at: `~/Projects/my-app`
+Creates project at: `~/Projects/testing`
 
 ## Command Options
 
-### Runtime Options
+### Runtime Flags
 
 | Flag | Description |
 |------|-------------|
-| `--npm` | Use npm for node dependencies |
-| `--pnpm` | Use pnpm for node dependencies |
-| `--yarn` | Use yarn for node dependencies |
-| `--bun` | Use bun for node dependencies |
+| `--npm` | Use npm runtime |
+| `--pnpm` | Use pnpm runtime |
+| `--yarn` | Use yarn runtime |
+| `--bun` | Use bun runtime |
 
-### Install Options
+### Install Flags
 
 | Flag | Description |
 |------|-------------|
@@ -99,30 +89,19 @@ Creates project at: `~/Projects/my-app`
 | `--install-node` | Install node dependencies only |
 | `--no-install` | Skip dependency installation |
 
-### General Options
+### General Flags
 
 | Flag | Description |
 |------|-------------|
-| `--branch <name>` | Specify branch |
-| `--help` | Show help message |
+| `--help` | Show help information |
 
 ## Examples
 
 ```bash
-# Interactive installation
 better-laravel new
-
-# Use specific runtime
 better-laravel new --bun
-
-# Node dependencies only
 better-laravel new --pnpm --install-node
-
-# Skip all dependencies
 better-laravel new --no-install
-
-# Specify branch
-better-laravel new --branch main --bun
 ```
 
 ## Requirements
@@ -132,25 +111,6 @@ better-laravel new --branch main --bun
 - Git
 - Node.js (npm, pnpm, yarn, or bun)
 
-## Development
-
-### Local Development
-
-```bash
-git clone https://github.com/MAHMETT/better-laravel-react-installer.git
-cd better-laravel-react-installer
-./better-laravel new
-```
-
-### Configuration
-
-Edit files in `configs/`:
-
-- `project.conf` — Branches, runtimes, cleanup rules
-- `ui.conf` — Colors and formatting
-- `dependencies.conf` — Required dependencies
-- `workflow.conf` — Installation steps
-
 ## License
 
-MIT License
+MIT
