@@ -25,7 +25,7 @@ if not command -q curl; and not command -q wget
 end
 
 # Download
-echo "$GREEN[STEP]$NC Downloading better-laravel..."
+echo "$GREEN""[STEP]""$NC Downloading better-laravel..."
 set -l TEMP_FILE (mktemp)
 
 if command -q curl
@@ -43,7 +43,7 @@ end
 chmod +x "$TEMP_FILE"
 
 # Install
-echo "$GREEN[STEP]$NC Installing to $INSTALL_DIR..."
+echo "$GREEN""[STEP]""$NC Installing to $INSTALL_DIR..."
 
 if test -w "$INSTALL_DIR"
     mv "$TEMP_FILE" "$INSTALL_DIR/better-laravel"
