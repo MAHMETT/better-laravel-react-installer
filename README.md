@@ -1,6 +1,6 @@
 # Better Laravel React Installer
 
-A minimal, cross-platform CLI installer for the Better Laravel React starter kit.
+A minimal, modern, and robust CLI installer for the Better Laravel React starter kit.
 
 ## Installation
 
@@ -30,66 +30,54 @@ curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-instal
 better-laravel new
 ```
 
-### CLI Mode
+### Update Installer
 
 ```bash
-better-laravel new --bun
-better-laravel new --pnpm --install-node
-better-laravel new --no-install
+better-laravel update
+```
+
+### Help
+
+```bash
+better-laravel --help
 ```
 
 ## Workflow
 
-1. Run `better-laravel new` in your projects directory
-2. Enter a project name (e.g., `my-app`)
-3. Select a branch
-4. Choose a runtime (npm/pnpm/yarn/bun)
-5. Select packages to install
-6. The installer clones, configures, and sets up your project
+The installer follows three stages:
 
-Result: `~/Projects/my-app` ready for development.
+### 1. Dependency Checking
 
-## CLI Options
+Before any user input, the installer verifies required dependencies:
 
-### Runtime
+- **PHP** (required)
+- **Composer** (required)
+- **Node Runtime** (at least one: npm, pnpm, yarn, or bun)
 
-| Flag | Description |
-|------|-------------|
-| `--npm` | Use npm (default) |
-| `--pnpm` | Use pnpm |
-| `--yarn` | Use yarn |
-| `--bun` | Use bun |
+If any dependency is missing, the installer stops immediately with a clear error message.
 
-### Installation
+### 2. User Configuration
 
-| Flag | Description |
-|------|-------------|
-| `--install-all` | Install Composer + Node (default) |
-| `--install-composer` | Install Composer only |
-| `--install-node` | Install Node only |
-| `--no-install` | Skip installation |
+After dependencies are verified, you'll be prompted for:
 
-### General
+| Field | Description | Default |
+|-------|-------------|---------|
+| **Project Name** | Lowercase, no spaces, a-z/0-9/-/_ | - |
+| **Branch** | Git branch to checkout | `main` |
+| **Runtime** | Node package manager | `npm` |
+| **Install Packages** | Composer, Node, both, or none | Both |
 
-| Flag | Description |
-|------|-------------|
-| `--help`, `-h` | Show help |
+### 3. Main Installation
 
-## Examples
+The installer performs these steps:
 
-```bash
-# Interactive installation
-better-laravel new
+1. Clone the repository
+2. Checkout the selected branch
+3. Clean up unnecessary files (docs, AI configs, .git)
+4. Create `.env` from `.env.example`
+5. Install selected dependencies
 
-# Use bun runtime
-better-laravel new --bun
-
-# pnpm with Node deps only
-better-laravel new --pnpm --install-node
-
-# Skip dependency installation
-better-laravel new --no-install
-```
+Result: A ready-to-develop Laravel + React project.
 
 ## Requirements
 
@@ -97,6 +85,62 @@ better-laravel new --no-install
 - Composer
 - Git
 - Node.js + package manager (npm/pnpm/yarn/bun)
+
+## Project Name Validation
+
+| Rule | Description |
+|------|-------------|
+| Max length | 200 characters |
+| Case | Must be lowercase |
+| Spaces | Not allowed |
+| Allowed characters | a-z, 0-9, hyphen (-), underscore (_) |
+
+## Branch Options
+
+| Title | Branch Name |
+|-------|-------------|
+| main | `main` |
+| development | `development` |
+| + visitor management | `analytics-visitors` |
+
+## Runtime Options
+
+| Runtime | Install Command |
+|---------|-----------------|
+| npm | `npm install` |
+| pnpm | `pnpm install` |
+| yarn | `yarn install` |
+| bun | `bun install` |
+
+## Installation Options
+
+| Option | Description |
+|--------|-------------|
+| Both | Install Composer + Node dependencies (default) |
+| Composer only | Install only Composer dependencies |
+| Node only | Install only Node dependencies |
+| None | Skip dependency installation |
+
+## Cleanup
+
+The installer removes these files/folders:
+
+**Folders:** `docs/`, `.agents/`, `.claude/`, `.codex/`, `.qwen/`, `.git/`, `.github/`
+
+**Files:** `.bunrc`, `bun.lock`, `mcp.json`, `AGENTS.md`, `CLAUDE.md`, `QWEN.md`, `boost.json`, `_ide_helper.php`, `opencode.json`
+
+## Examples
+
+```bash
+# Start interactive installation
+better-laravel new
+
+# Update the installer to the latest version
+better-laravel update
+
+# Show help
+better-laravel --help
+```
 
 ## License
 

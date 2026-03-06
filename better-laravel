@@ -3,8 +3,8 @@
 # ==============================================================================
 # Better Laravel React Installer - Single-File CLI
 # ==============================================================================
-# A minimal, cross-platform installer for the Better Laravel React starter kit.
-# Supports bash, zsh, and fish shells.
+# A minimal, modern, and robust installer for the Better Laravel React starter kit.
+# Supports bash, zsh, and fish shells with clean TUI-based interactive experience.
 # ==============================================================================
 
 set -e
@@ -14,35 +14,40 @@ set -e
 # ==============================================================================
 
 readonly REPO_URL="https://github.com/MAHMETT/better-laravel-react.git"
+
+# Branch configuration: array of {title, branch}
+readonly -a BRANCH_TITLES=("main" "development" "+ visitor management")
+readonly -a BRANCH_NAMES=("main" "development" "analytics-visitors")
 readonly DEFAULT_BRANCH="main"
+
+# Runtime configuration
+readonly -a RUNTIMES=("npm" "pnpm" "yarn" "bun")
 readonly DEFAULT_RUNTIME="npm"
 
-# Branch options: "Display Title|branch-name"
-readonly -a BRANCHES=(
-    "main|main"
-    "+ visitor management|analytics-visitor"
-)
-
-# Available runtimes for dependency check
-readonly -a RUNTIMES=("npm" "pnpm" "yarn" "bun")
-
-# Files/folders to cleanup
+# Folders to remove during cleanup
 readonly -a CLEANUP_FOLDERS=("docs" ".agents" ".claude" ".codex" ".qwen" ".git" ".github")
+
+# Files to remove during cleanup
 readonly -a CLEANUP_FILES=(".bunrc" "bun.lock" "mcp.json" "AGENTS.md" "CLAUDE.md" "QWEN.md" "boost.json" "_ide_helper.php" "opencode.json")
 
 # Colors
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
 readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
 readonly CYAN='\033[0;36m'
 readonly GRAY='\033[0;90m'
 readonly BOLD='\033[1m'
+readonly DIM='\033[2m'
 readonly NC='\033[0m'
 
-# State
+# State variables
 PROJECT_NAME=""
 SELECTED_BRANCH=""
+SELECTED_RUNTIME=""
+INSTALL_COMPOSER="true"
+INSTALL_NODE="true"
+INSTALLATION_STARTED="false"
+INSTALLATION_COMPLETED="false"
 
 # ==============================================================================
 # TUI OUTPUT FUNCTIONS
@@ -53,48 +58,46 @@ print_banner() {
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${BOLD}${CYAN}   Better Laravel React Installer${NC}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${GRAY}   Interactive Laravel Starter Kit${NC}"
     echo ""
 }
 
 print_section() {
     echo ""
-    echo -e "${GRAY}────────────────────────────────────────${NC}"
-    echo -e "${BOLD}${CYAN} $1${NC}"
-    echo -e "${GRAY}────────────────────────────────────────${NC}"
+    echo -e "${BOLD}${CYAN}━━━ $1 ${NC}"
+    echo ""
 }
 
 print_step() {
-    echo -e "${GREEN}[STEP $1/$2]${NC} $3"
+    echo -e "${DIM}[$1]${NC} $2"
 }
 
 print_success() {
-    echo -e "  ${GREEN}✔${NC} $1"
+    echo -e "${GREEN}  ✔${NC} $1"
 }
 
 print_error() {
-    echo -e "  ${RED}✖${NC} ${RED}$1${NC}"
+    echo -e "${RED}  ✖${NC} ${RED}$1${NC}"
 }
 
 print_warning() {
-    echo -e "  ${YELLOW}⚠${NC} $1"
+    echo -e "${YELLOW}  ⚠${NC} $1"
 }
 
 print_info() {
-    echo -e "  ${CYAN}ℹ${NC} $1"
+    echo -e "${CYAN}  ℹ${NC} $1"
+}
+
+print_divider() {
+    echo -e "${GRAY}────────────────────────────────────────${NC}"
 }
 
 # ==============================================================================
 # ERROR HANDLING
 # ==============================================================================
 
-INSTALLATION_STARTED="false"
-INSTALLATION_COMPLETED="false"
-
 handle_interrupt() {
     echo ""
-    echo ""
-    print_section "Installation Cancelled"
+    print_divider
     echo ""
     
     if [ "$INSTALLATION_STARTED" = "true" ] && [ "$INSTALLATION_COMPLETED" != "true" ]; then
@@ -102,8 +105,8 @@ handle_interrupt() {
         
         if [ -n "$PROJECT_NAME" ] && [ -d "$PROJECT_NAME" ]; then
             echo ""
-            echo -e "  ${DIM}Partial installation detected:${RESET}"
-            echo -e "  ${DIM}Project directory '$PROJECT_NAME' was created${RESET}"
+            echo -e "${DIM}  Partial installation detected:${NC}"
+            echo -e "${DIM}  Project directory '$PROJECT_NAME' was created${NC}"
             echo ""
             echo "  Options:"
             echo ""
@@ -119,7 +122,6 @@ handle_interrupt() {
         print_info "No changes were made"
     fi
     
-    echo ""
     echo -e "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     exit 130
@@ -128,94 +130,67 @@ handle_interrupt() {
 trap 'handle_interrupt' INT TERM
 
 # ==============================================================================
-# DEPENDENCY CHECKING
+# STAGE 1: DEPENDENCY CHECKING
 # ==============================================================================
 
 check_dependencies() {
-    print_section "Checking Dependencies"
-    
-    local has_error=false
     local missing=()
+    local has_node_runtime=false
     
-    # Check PHP
-    if command -v php >/dev/null 2>&1; then
-        print_success "PHP: $(php -v 2>&1 | head -n 1)"
-    else
+    # Check PHP (required)
+    if ! command -v php >/dev/null 2>&1; then
         missing+=("php")
     fi
     
-    # Check Composer
-    if command -v composer >/dev/null 2>&1; then
-        print_success "Composer: $(composer --version 2>&1)"
-    else
+    # Check Composer (required)
+    if ! command -v composer >/dev/null 2>&1; then
         missing+=("composer")
     fi
     
-    # Check Git
-    if command -v git >/dev/null 2>&1; then
-        print_success "Git: $(git --version 2>&1)"
-    else
-        missing+=("git")
-    fi
-    
-    # Check Node runtime
-    local found_runtimes=()
+    # Check Node runtime (at least one required)
     for runtime in "${RUNTIMES[@]}"; do
         if command -v "$runtime" >/dev/null 2>&1; then
-            found_runtimes+=("$runtime: $($runtime --version 2>&1 | head -n 1)")
+            has_node_runtime=true
+            break
         fi
     done
     
-    if [ ${#found_runtimes[@]} -gt 0 ]; then
-        print_success "Node Runtime: ${found_runtimes[*]}"
-    else
-        missing+=("npm OR pnpm OR yarn OR bun")
+    if [ "$has_node_runtime" = false ]; then
+        missing+=("npm OR pnpm OR yarn OR bun (at least one required)")
     fi
     
-    echo ""
-    
+    # Report errors and exit if any dependencies are missing
     if [ ${#missing[@]} -gt 0 ]; then
-        print_error "Missing dependencies: ${missing[*]}"
-        echo -e "  ${GRAY}Installation cannot continue${NC}"
+        echo ""
+        print_error "Missing dependency detected:"
+        echo ""
+        for dep in "${missing[@]}"; do
+            echo -e "  ${RED}•${NC} $dep"
+        done
+        echo ""
+        print_error "Installation cannot continue."
         echo ""
         exit 1
     fi
     
-    print_success "All dependencies satisfied!"
+    # All dependencies satisfied - continue silently (no success message)
 }
 
 # ==============================================================================
-# INPUT VALIDATION
-# ==============================================================================
-
-validate_project_name() {
-    local name="$1"
-    
-    [ -z "$name" ] && return 1
-    [ ${#name} -gt 200 ] && return 1
-    [ "$name" != "${name,,}" ] && return 1
-    [[ "$name" =~ [[:space:]] ]] && return 1
-    ! [[ "$name" =~ ^[a-z0-9_-]+$ ]] && return 1
-    
-    return 0
-}
-
-# ==============================================================================
-# USER INPUT - INTERACTIVE
+# STAGE 2: USER CONFIGURATION FIELDS
 # ==============================================================================
 
 get_project_name() {
     print_section "Project Configuration"
     
     while true; do
-        echo ""
         echo -ne "  ${CYAN}Enter project name${NC}: "
         read -r PROJECT_NAME
         
         if validate_project_name "$PROJECT_NAME"; then
-            print_success "Project name: ${BOLD}$PROJECT_NAME${NC}"
             break
         else
+            echo ""
             print_error "Invalid project name"
             echo ""
             echo "  Requirements:"
@@ -228,52 +203,160 @@ get_project_name() {
     done
 }
 
+validate_project_name() {
+    local name="$1"
+    
+    # Check if empty
+    [ -z "$name" ] && return 1
+    
+    # Check length
+    [ ${#name} -gt 200 ] && return 1
+    
+    # Check if lowercase (no uppercase letters)
+    [ "$name" != "${name,,}" ] && return 1
+    
+    # Check for spaces
+    [[ "$name" =~ [[:space:]] ]] && return 1
+    
+    # Check allowed characters (a-z, 0-9, -, _)
+    ! [[ "$name" =~ ^[a-z0-9_-]+$ ]] && return 1
+    
+    return 0
+}
+
 get_branch() {
-    echo ""
     print_section "Branch Selection"
-    echo ""
+    
     echo -e "  ${GRAY}Available branches:${NC}"
     echo ""
     
-    for i in "${!BRANCHES[@]}"; do
-        IFS='|' read -r title branch_name <<< "${BRANCHES[$i]}"
+    for i in "${!BRANCH_TITLES[@]}"; do
         local default_mark=""
-        [ "$branch_name" = "$DEFAULT_BRANCH" ] && default_mark=" ${GRAY}(default)${NC}"
-        echo -e "  ${GREEN}$((i + 1))${NC}) $title$default_mark"
+        [ "${BRANCH_NAMES[$i]}" = "$DEFAULT_BRANCH" ] && default_mark=" ${GRAY}(default)${NC}"
+        echo -e "  ${GREEN}$((i + 1))${NC}) ${BRANCH_TITLES[$i]}$default_mark"
     done
     
     echo ""
     
     while true; do
-        echo -ne "  ${CYAN}Select branch${NC} [1-${#BRANCHES[@]}]: "
+        echo -ne "  ${CYAN}Select branch${NC} [1-${#BRANCH_TITLES[@]}]: "
         read -r choice
         
+        # Default to 1 if empty
         [ -z "$choice" ] && choice=1
         
-        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#BRANCHES[@]}" ]; then
-            IFS='|' read -r title branch_name <<< "${BRANCHES[$((choice - 1))]}"
-            SELECTED_BRANCH="$branch_name"
-            print_success "Branch: ${BOLD}$SELECTED_BRANCH${NC}"
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#BRANCH_TITLES[@]}" ]; then
+            SELECTED_BRANCH="${BRANCH_NAMES[$((choice - 1))]}"
             break
         else
             print_error "Invalid selection"
+            echo ""
         fi
     done
 }
 
+get_runtime() {
+    print_section "Runtime Selection"
+    
+    echo -e "  ${GRAY}Available runtimes:${NC}"
+    echo ""
+    
+    for i in "${!RUNTIMES[@]}"; do
+        local default_mark=""
+        [ "${RUNTIMES[$i]}" = "$DEFAULT_RUNTIME" ] && default_mark=" ${GRAY}(default)${NC}"
+        echo -e "  ${GREEN}$((i + 1))${NC}) ${RUNTIMES[$i]}$default_mark"
+    done
+    
+    echo ""
+    
+    while true; do
+        echo -ne "  ${CYAN}Select runtime${NC} [1-${#RUNTIMES[@]}]: "
+        read -r choice
+        
+        # Default to 1 (npm) if empty
+        [ -z "$choice" ] && choice=1
+        
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#RUNTIMES[@]}" ]; then
+            SELECTED_RUNTIME="${RUNTIMES[$((choice - 1))]}"
+            break
+        else
+            print_error "Invalid selection"
+            echo ""
+        fi
+    done
+}
+
+get_install_options() {
+    print_section "Package Installation"
+    
+    echo -e "  ${GRAY}Select packages to install:${NC}"
+    echo ""
+    echo -e "  ${GREEN}1${NC}) Composer dependencies ${GRAY}(default: yes)${NC}"
+    echo -e "  ${GREEN}2${NC}) Node dependencies ${GRAY}(default: yes)${NC}"
+    echo -e "  ${GREEN}3${NC}) Both"
+    echo -e "  ${GREEN}4${NC}) None"
+    echo ""
+    
+    while true; do
+        echo -ne "  ${CYAN}Select option${NC} [1-4]: "
+        read -r choice
+        
+        # Default to 3 (both) if empty
+        [ -z "$choice" ] && choice=3
+        
+        case "$choice" in
+            1)
+                INSTALL_COMPOSER="true"
+                INSTALL_NODE="false"
+                break
+                ;;
+            2)
+                INSTALL_COMPOSER="false"
+                INSTALL_NODE="true"
+                break
+                ;;
+            3)
+                INSTALL_COMPOSER="true"
+                INSTALL_NODE="true"
+                break
+                ;;
+            4)
+                INSTALL_COMPOSER="false"
+                INSTALL_NODE="false"
+                break
+                ;;
+            *)
+                print_error "Invalid selection"
+                echo ""
+                ;;
+        esac
+    done
+}
+
 confirm_installation() {
-    echo ""
     print_section "Installation Summary"
-    echo ""
+    
     echo -e "  ${GRAY}Project:${NC}     ${BOLD}$PROJECT_NAME${NC}"
     echo -e "  ${GRAY}Branch:${NC}      ${BOLD}$SELECTED_BRANCH${NC}"
-    echo ""
-    echo -ne "  ${CYAN}Proceed with installation?${NC} [y/N]: "
-    read -r confirm
-
-    if [[ "$confirm" =~ ^[Yy]$ ]]; then
-        print_success "Starting installation..."
+    echo -e "  ${GRAY}Runtime:${NC}     ${BOLD}$SELECTED_RUNTIME${NC}"
+    
+    local install_summary=""
+    if [ "$INSTALL_COMPOSER" = "true" ] && [ "$INSTALL_NODE" = "true" ]; then
+        install_summary="Composer + Node dependencies"
+    elif [ "$INSTALL_COMPOSER" = "true" ]; then
+        install_summary="Composer dependencies only"
+    elif [ "$INSTALL_NODE" = "true" ]; then
+        install_summary="Node dependencies only"
     else
+        install_summary="Skip dependency installation"
+    fi
+    
+    echo -e "  ${GRAY}Install:${NC}     ${BOLD}$install_summary${NC}"
+    echo ""
+    echo -ne "  ${CYAN}Proceed with installation?${NC} [Y/n]: "
+    read -r confirm
+    
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
         echo ""
         print_warning "Installation cancelled"
         echo ""
@@ -282,122 +365,161 @@ confirm_installation() {
 }
 
 # ==============================================================================
-# INSTALLATION WORKFLOW
+# STAGE 3: MAIN INSTALLATION PROCESS
 # ==============================================================================
 
 clone_repository() {
-    print_step "1" "4" "Cloning repository..."
-
+    print_step "1" "Cloning repository..."
+    
     # Check if directory already exists
     if [ -d "$PROJECT_NAME" ]; then
-        echo -e "\n${RED}Error: Directory '$PROJECT_NAME' already exists${NC}"
-        echo -e "${GRAY}Please remove it or choose a different project name${NC}"
+        echo ""
+        print_error "Directory '$PROJECT_NAME' already exists"
+        print_error "Please remove it or choose a different project name"
+        echo ""
         exit 1
     fi
-
+    
     # Clone repository
-    if git clone "$REPO_URL" "$PROJECT_NAME" 2>&1; then
-        print_success "Repository cloned to '${BOLD}$PROJECT_NAME${NC}'"
-    else
-        echo -e "\n${RED}Failed to clone repository${NC}"
-        echo -e "${GRAY}Check your internet connection and try again${NC}"
+    if ! git clone "$REPO_URL" "$PROJECT_NAME" >/dev/null 2>&1; then
+        echo ""
+        print_error "Failed to clone repository"
+        print_error "Check your internet connection and try again"
+        echo ""
         exit 1
     fi
+    
+    print_success "Repository cloned to '$PROJECT_NAME'"
 }
 
 enter_project_directory() {
-    print_step "2" "4" "Entering project directory..."
-
-    if cd "$PROJECT_NAME" 2>/dev/null; then
-        print_success "Changed to project directory"
-    else
-        echo -e "\n${RED}Failed to enter project directory${NC}"
+    print_step "2" "Entering project directory..."
+    
+    if ! cd "$PROJECT_NAME" 2>/dev/null; then
+        echo ""
+        print_error "Failed to enter project directory"
+        echo ""
         exit 1
     fi
+    
+    print_success "Changed to project directory"
 }
 
 checkout_branch() {
-    print_step "3" "4" "Switching to branch '$SELECTED_BRANCH'..."
-
-    if git checkout "$SELECTED_BRANCH" >/dev/null 2>&1; then
-        print_success "Switched to branch '${BOLD}$SELECTED_BRANCH${NC}'"
-    else
-        echo -e "\n${RED}Failed to checkout branch${NC}"
+    print_step "3" "Switching to branch '$SELECTED_BRANCH'..."
+    
+    if ! git checkout "$SELECTED_BRANCH" >/dev/null 2>&1; then
+        echo ""
+        print_error "Failed to checkout branch '$SELECTED_BRANCH'"
+        echo ""
         exit 1
     fi
+    
+    print_success "Switched to branch '$SELECTED_BRANCH'"
 }
 
 cleanup_files() {
-    print_step "4" "4" "Removing unnecessary files..."
-
+    print_step "4" "Cleaning unnecessary files..."
+    
     local count=0
-
-    # Remove documentation folder
-    if [ -d "docs" ]; then
-        rm -rf "docs"
-        ((count++))
-    fi
-
-    # Remove AI agent folders
-    for folder in ".agents" ".claude" ".codex" ".qwen"; do
+    
+    # Remove folders
+    for folder in "${CLEANUP_FOLDERS[@]}"; do
         if [ -d "$folder" ]; then
             rm -rf "$folder"
             ((count++))
         fi
     done
-
-    # Remove Git folders
-    for folder in ".git" ".github"; do
-        if [ -d "$folder" ]; then
-            rm -rf "$folder"
-            ((count++))
-        fi
-    done
-
-    # Remove lock files
-    for file in ".bunrc" "bun.lock"; do
+    
+    # Remove files
+    for file in "${CLEANUP_FILES[@]}"; do
         if [ -f "$file" ]; then
             rm -f "$file"
             ((count++))
         fi
     done
-
-    # Remove AI boost/helper files
-    for file in "mcp.json" "AGENTS.md" "CLAUDE.md" "QWEN.md" "boost.json" "_ide_helper.php" "opencode.json"; do
-        if [ -f "$file" ]; then
-            rm -f "$file"
-            ((count++))
-        fi
-    done
-
-    print_success "Removed ${BOLD}$count${NC} file(s)/folder(s)"
+    
+    print_success "Removed $count file(s)/folder(s)"
 }
 
 setup_environment() {
-    if [ -f ".env.example" ]; then
-        cp ".env.example" ".env"
-        print_success "Created .env file"
+    print_step "5" "Preparing environment file..."
+    
+    if [ ! -f ".env.example" ]; then
+        echo ""
+        print_error ".env.example not found"
+        print_error "Cannot create environment file"
+        echo ""
+        exit 1
+    fi
+    
+    if ! cp ".env.example" ".env"; then
+        echo ""
+        print_error "Failed to create .env file"
+        echo ""
+        exit 1
+    fi
+    
+    print_success ".env created"
+}
+
+install_dependencies() {
+    if [ "$INSTALL_COMPOSER" = "false" ] && [ "$INSTALL_NODE" = "false" ]; then
+        print_step "6" "Skipping dependency installation..."
+        print_success "Dependency installation skipped"
+        return
+    fi
+    
+    print_step "6" "Installing dependencies..."
+    
+    # Install Composer dependencies
+    if [ "$INSTALL_COMPOSER" = "true" ]; then
+        if ! composer install --quiet 2>/dev/null; then
+            echo ""
+            print_error "Failed to install Composer dependencies"
+            echo ""
+            exit 1
+        fi
+        print_success "Composer dependencies installed"
+    fi
+    
+    # Install Node dependencies based on selected runtime
+    if [ "$INSTALL_NODE" = "true" ]; then
+        local install_cmd=""
+        case "$SELECTED_RUNTIME" in
+            npm)  install_cmd="npm install" ;;
+            pnpm) install_cmd="pnpm install" ;;
+            yarn) install_cmd="yarn install" ;;
+            bun)  install_cmd="bun install" ;;
+        esac
+        
+        if ! $install_cmd >/dev/null 2>&1; then
+            echo ""
+            print_error "Failed to install Node dependencies"
+            echo ""
+            exit 1
+        fi
+        print_success "Node dependencies installed ($SELECTED_RUNTIME)"
     fi
 }
 
 print_completion() {
     echo ""
     print_section "Installation Complete"
-    echo ""
-    echo -e "  ${GREEN}✔${NC} ${GREEN}Installation completed successfully!${NC}"
+    
+    print_success "Installation completed successfully!"
     echo ""
     echo -e "  ${GRAY}Project:${NC}  ${BOLD}$PROJECT_NAME${NC}"
     echo -e "  ${GRAY}Branch:${NC}   ${BOLD}$SELECTED_BRANCH${NC}"
+    echo -e "  ${GRAY}Runtime:${NC}  ${BOLD}$SELECTED_RUNTIME${NC}"
     echo ""
     echo -e "  ${GRAY}Next steps:${NC}"
     echo -e "     ${CYAN}cd $PROJECT_NAME${NC}"
-    echo -e "     ${CYAN}composer install${NC}"
-    echo -e "     ${CYAN}npm install${NC}"
     echo -e "     ${CYAN}php artisan serve${NC}"
     echo ""
     echo -e "  ${CYAN}Happy coding!${NC}"
     echo ""
-
+    
     INSTALLATION_COMPLETED="true"
 }
 
@@ -413,12 +535,18 @@ show_help() {
     echo ""
     echo -e "${BOLD}USAGE${NC}"
     echo -e "  better-laravel new"
+    echo -e "  better-laravel update"
+    echo ""
+    echo -e "${BOLD}COMMANDS${NC}"
+    echo -e "  new               Start a new Laravel + React project"
+    echo -e "  update            Update the installer to the latest version"
     echo ""
     echo -e "${BOLD}GENERAL${NC}"
     echo -e "  --help, -h        Show this help message"
     echo ""
     echo -e "${BOLD}EXAMPLES${NC}"
     echo -e "  ${GRAY}better-laravel new${NC}"
+    echo -e "  ${GRAY}better-laravel update${NC}"
     echo ""
 }
 
@@ -432,9 +560,131 @@ parse_args() {
 }
 
 run_interactive() {
+    # Stage 2: User Configuration Fields
     get_project_name
     get_branch
+    get_runtime
+    get_install_options
     confirm_installation
+}
+
+run_installation() {
+    INSTALLATION_STARTED="true"
+    
+    # Stage 3: Main Installation Process
+    clone_repository
+    enter_project_directory
+    checkout_branch
+    cleanup_files
+    setup_environment
+    install_dependencies
+    
+    print_completion
+}
+
+# ==============================================================================
+# UPDATE COMMAND
+# ==============================================================================
+
+run_update() {
+    print_banner
+    print_section "Checking for Updates"
+    
+    local install_dir=""
+    local script_path=""
+    
+    # Detect installation location
+    if [ -f "/usr/local/bin/better-laravel" ]; then
+        install_dir="/usr/local/bin"
+        script_path="/usr/local/bin/better-laravel"
+    elif [ -f "$HOME/.local/bin/better-laravel" ]; then
+        install_dir="$HOME/.local/bin"
+        script_path="$HOME/.local/bin/better-laravel"
+    elif [ -n "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/better-laravel" ]; then
+        install_dir="$INSTALL_DIR"
+        script_path="$INSTALL_DIR/better-laravel"
+    else
+        # Try to find via PATH
+        script_path=$(command -v better-laravel 2>/dev/null)
+        if [ -n "$script_path" ]; then
+            install_dir=$(dirname "$script_path")
+        else
+            print_error "Could not determine installer location"
+            print_error "Please reinstall manually"
+            echo ""
+            exit 1
+        fi
+    fi
+    
+    print_info "Current installation: ${GRAY}$script_path${NC}"
+    echo ""
+    
+    # Download latest version
+    print_step "1" "3" "Downloading latest version..."
+    
+    local temp_file
+    temp_file=$(mktemp)
+    
+    if command -v curl >/dev/null 2>&1; then
+        if ! curl -fsSL -o "$temp_file" "https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/better-laravel" 2>/dev/null; then
+            print_error "Failed to download latest version"
+            print_error "Check your internet connection"
+            echo ""
+            exit 1
+        fi
+    elif command -v wget >/dev/null 2>&1; then
+        if ! wget -q -O "$temp_file" "https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/better-laravel"; then
+            print_error "Failed to download latest version"
+            print_error "Check your internet connection"
+            echo ""
+            exit 1
+        fi
+    else
+        print_error "curl or wget is required"
+        echo ""
+        exit 1
+    fi
+    
+    print_success "Latest version downloaded"
+    
+    # Make executable
+    print_step "2" "3" "Preparing update..."
+    
+    chmod +x "$temp_file"
+    
+    print_success "Update prepared"
+    
+    # Install
+    print_step "3" "3" "Installing update..."
+    
+    if [ -w "$install_dir" ]; then
+        if ! mv "$temp_file" "$script_path" 2>/dev/null; then
+            print_error "Failed to install update"
+            echo ""
+            exit 1
+        fi
+    elif command -v sudo >/dev/null 2>&1; then
+        if ! sudo mv "$temp_file" "$script_path" 2>/dev/null; then
+            print_error "Failed to install update (sudo required)"
+            echo ""
+            exit 1
+        fi
+    else
+        print_error "Cannot write to $install_dir"
+        print_error "Please run with sudo or check permissions"
+        echo ""
+        exit 1
+    fi
+    
+    print_success "Update installed"
+    
+    echo ""
+    print_section "Update Complete"
+    
+    print_success "Installer updated to the latest version!"
+    echo ""
+    echo -e "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
 }
 
 # ==============================================================================
@@ -444,26 +694,24 @@ run_interactive() {
 main() {
     local cmd="${1:-}"
     shift || true
-
+    
+    parse_args "$@"
+    
     case "$cmd" in
         new)
             print_banner
+            
+            # Stage 1: Dependency Checking
             check_dependencies
+            
+            # Stage 2: User Configuration Fields
             run_interactive
-
-            echo ""
-            print_section "Installing"
-            echo ""
-
-            INSTALLATION_STARTED="true"
-
-            clone_repository
-            enter_project_directory
-            checkout_branch
-            cleanup_files
-            setup_environment
-
-            print_completion
+            
+            # Stage 3: Main Installation Process
+            run_installation
+            ;;
+        update)
+            run_update
             ;;
         help|--help|-h|"")
             show_help
