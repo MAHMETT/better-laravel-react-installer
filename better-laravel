@@ -12,9 +12,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALLER_SCRIPT=""
 
 # Try to find installer.sh in multiple locations
-if [ -f "$SCRIPT_DIR/installer.sh" ]; then
+if [ -f "$SCRIPT_DIR/better-laravel-configs/installer.sh" ]; then
     # Same directory as this script
-    INSTALLER_SCRIPT="$SCRIPT_DIR/installer.sh"
+    INSTALLER_SCRIPT="$SCRIPT_DIR/better-laravel-configs/installer.sh"
 elif [ -f "$(pwd)/installer.sh" ]; then
     # Current working directory
     INSTALLER_SCRIPT="$(pwd)/installer.sh"
@@ -31,15 +31,15 @@ download_installer() {
     echo "Downloading installer..."
     
     if command -v curl >/dev/null 2>&1; then
-        if curl -fsSL -o "$temp_dir/installer.sh" "$raw_url/installer.sh" 2>/dev/null; then
-            chmod +x "$temp_dir/installer.sh"
-            echo "$temp_dir/installer.sh"
+        if curl -fsSL -o "$temp_dir/better-laravel-configs/installer.sh" "$raw_url/installer.sh" 2>/dev/null; then
+            chmod +x "$temp_dir/better-laravel-configs/installer.sh"
+            echo "$temp_dir/better-laravel-configs/installer.sh"
             return 0
         fi
     elif command -v wget >/dev/null 2>&1; then
-        if wget -q -O "$temp_dir/installer.sh" "$raw_url/installer.sh" 2>/dev/null; then
-            chmod +x "$temp_dir/installer.sh"
-            echo "$temp_dir/installer.sh"
+        if wget -q -O "$temp_dir/better-laravel-configs/installer.sh" "$raw_url/installer.sh" 2>/dev/null; then
+            chmod +x "$temp_dir/better-laravel-configs/installer.sh"
+            echo "$temp_dir/better-laravel-configs/installer.sh"
             return 0
         fi
     fi

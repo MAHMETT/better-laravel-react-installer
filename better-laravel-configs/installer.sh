@@ -8,7 +8,7 @@
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR="$SCRIPT_DIR/configs"
+CONFIG_DIR="$SCRIPT_DIR/better-laravel-configs/configs"
 
 # Source all configuration files
 source "$CONFIG_DIR/project.conf"

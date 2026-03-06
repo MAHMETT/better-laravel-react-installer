@@ -16,13 +16,17 @@ This repository contains a CLI tool to set up Laravel projects with React integr
 
 ## Installing the CLI Installer
 
-### Clone the source code
+### Install with one command
 
 ```bash
-git clone https://github.com/MAHMETT/better-laravel-react-installer.git /usr/local/bin/better-laravel
+git clone https://github.com/MAHMETT/better-laravel-react-installer.git /tmp/better-laravel && \
+cd /tmp/better-laravel && \
+sudo cp better-laravel installer.sh /usr/local/bin/ && \
+sudo chmod +x /usr/local/bin/better-laravel /usr/local/bin/installer.sh && \
+rm -rf /tmp/better-laravel
 ```
 
-### Add the path to your shell
+### Add the path to your shell (if needed)
 
 **Bash:**
 ```bash
