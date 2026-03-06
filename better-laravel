@@ -23,9 +23,6 @@ readonly -a BRANCHES=(
     "+ visitor management|analytics-visitor"
 )
 
-# Available runtimes
-readonly -a RUNTIMES=("npm" "pnpm" "yarn" "bun")
-
 # Files/folders to cleanup
 readonly -a CLEANUP_FOLDERS=("docs" ".agents" ".claude" ".codex" ".qwen" ".git" ".github")
 readonly -a CLEANUP_FILES=(".bunrc" "bun.lock" "mcp.json" "AGENTS.md" "CLAUDE.md" "QWEN.md" "boost.json" "_ide_helper.php" "opencode.json")
@@ -43,10 +40,6 @@ readonly NC='\033[0m'
 # State
 PROJECT_NAME=""
 SELECTED_BRANCH=""
-SELECTED_RUNTIME=""
-INSTALL_COMPOSER=true
-INSTALL_NODE=true
-CLI_MODE=false
 
 # ==============================================================================
 # TUI OUTPUT FUNCTIONS
@@ -265,88 +258,16 @@ get_branch() {
     done
 }
 
-get_runtime() {
-    echo ""
-    print_section "Runtime Selection"
-    echo ""
-    echo -e "  ${GRAY}Available runtimes:${NC}"
-    echo ""
-    
-    for i in "${!RUNTIMES[@]}"; do
-        local runtime="${RUNTIMES[$i]}"
-        local status="${RED}not found${NC}"
-        local default_mark=""
-        
-        command -v "$runtime" >/dev/null 2>&1 && status="${GREEN}available${NC}"
-        [ "$runtime" = "$DEFAULT_RUNTIME" ] && default_mark=" ${GRAY}(default)${NC}"
-        
-        printf "  ${GREEN}%d${NC}) %-8s %s%s\n" $((i + 1)) "$runtime" "$status" "$default_mark"
-    done
-    
-    echo ""
-    
-    while true; do
-        echo -ne "  ${CYAN}Select runtime${NC} [1-${#RUNTIMES[@]}]: "
-        read -r choice
-        
-        [ -z "$choice" ] && choice=1
-        
-        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#RUNTIMES[@]}" ]; then
-            SELECTED_RUNTIME="${RUNTIMES[$((choice - 1))]}"
-            
-            if command -v "$SELECTED_RUNTIME" >/dev/null 2>&1; then
-                print_success "Runtime: ${BOLD}$SELECTED_RUNTIME${NC}"
-                break
-            else
-                print_error "$SELECTED_RUNTIME is not available"
-            fi
-        else
-            print_error "Invalid selection"
-        fi
-    done
-}
-
-get_auto_install() {
-    echo ""
-    print_section "Package Installation"
-    echo ""
-    echo "  Select packages to install:"
-    echo ""
-    echo -e "  ${GREEN}1${NC}) Both Composer and Node dependencies  ${GRAY}(default)${NC}"
-    echo -e "  ${GREEN}2${NC}) Only Composer dependencies"
-    echo -e "  ${GREEN}3${NC}) Only Node dependencies"
-    echo -e "  ${GREEN}4${NC}) None (manual installation)"
-    echo ""
-    
-    while true; do
-        echo -ne "  ${CYAN}Select option${NC} [1-4]: "
-        read -r choice
-        
-        [ -z "$choice" ] && choice=1
-        
-        case "$choice" in
-            1) INSTALL_COMPOSER=true; INSTALL_NODE=true; print_success "Installing: ${BOLD}Composer + Node${NC}"; break ;;
-            2) INSTALL_COMPOSER=true; INSTALL_NODE=false; print_success "Installing: ${BOLD}Composer only${NC}"; break ;;
-            3) INSTALL_COMPOSER=false; INSTALL_NODE=true; print_success "Installing: ${BOLD}Node only${NC}"; break ;;
-            4) INSTALL_COMPOSER=false; INSTALL_NODE=false; print_success "Installing: ${BOLD}None${NC}"; break ;;
-            *) print_error "Invalid selection" ;;
-        esac
-    done
-}
-
 confirm_installation() {
     echo ""
     print_section "Installation Summary"
     echo ""
     echo -e "  ${GRAY}Project:${NC}     ${BOLD}$PROJECT_NAME${NC}"
     echo -e "  ${GRAY}Branch:${NC}      ${BOLD}$SELECTED_BRANCH${NC}"
-    echo -e "  ${GRAY}Runtime:${NC}     ${BOLD}$SELECTED_RUNTIME${NC}"
-    echo -e "  ${GRAY}Composer:${NC}    ${BOLD}$([ "$INSTALL_COMPOSER" = true ] && echo "Yes" || echo "No")${NC}"
-    echo -e "  ${GRAY}Node:${NC}        ${BOLD}$([ "$INSTALL_NODE" = true ] && echo "Yes ($SELECTED_RUNTIME)" || echo "No")${NC}"
     echo ""
     echo -ne "  ${CYAN}Proceed with installation?${NC} [y/N]: "
     read -r confirm
-    
+
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
         print_success "Starting installation..."
     else
@@ -362,8 +283,8 @@ confirm_installation() {
 # ==============================================================================
 
 clone_repository() {
-    print_step "1" "6" "Cloning repository..."
-    
+    print_step "1" "4" "Cloning repository..."
+
     if git clone "$REPO_URL" "$PROJECT_NAME" >/dev/null 2>&1; then
         print_success "Repository cloned to '${BOLD}$PROJECT_NAME${NC}'"
     else
@@ -373,8 +294,8 @@ clone_repository() {
 }
 
 enter_project_directory() {
-    print_step "2" "6" "Entering project directory..."
-    
+    print_step "2" "4" "Entering project directory..."
+
     if cd "$PROJECT_NAME" 2>/dev/null; then
         print_success "Changed to project directory"
     else
@@ -384,8 +305,8 @@ enter_project_directory() {
 }
 
 checkout_branch() {
-    print_step "3" "6" "Switching to branch '$SELECTED_BRANCH'..."
-    
+    print_step "3" "4" "Switching to branch '$SELECTED_BRANCH'..."
+
     if git checkout "$SELECTED_BRANCH" >/dev/null 2>&1; then
         print_success "Switched to branch '${BOLD}$SELECTED_BRANCH${NC}'"
     else
@@ -395,56 +316,55 @@ checkout_branch() {
 }
 
 cleanup_files() {
-    print_step "4" "6" "Cleaning project files..."
-    
+    print_step "4" "4" "Removing unnecessary files..."
+
     local count=0
-    
-    for folder in "${CLEANUP_FOLDERS[@]}"; do
-        [ -d "$folder" ] && rm -rf "$folder" && ((count++))
+
+    # Remove documentation folder
+    if [ -d "docs" ]; then
+        rm -rf "docs"
+        ((count++))
+    fi
+
+    # Remove AI agent folders
+    for folder in ".agents" ".claude" ".codex" ".qwen"; do
+        if [ -d "$folder" ]; then
+            rm -rf "$folder"
+            ((count++))
+        fi
     done
-    
-    for file in "${CLEANUP_FILES[@]}"; do
-        [ -f "$file" ] && rm -f "$file" && ((count++))
+
+    # Remove Git folders
+    for folder in ".git" ".github"; do
+        if [ -d "$folder" ]; then
+            rm -rf "$folder"
+            ((count++))
+        fi
     done
-    
+
+    # Remove lock files
+    for file in ".bunrc" "bun.lock"; do
+        if [ -f "$file" ]; then
+            rm -f "$file"
+            ((count++))
+        fi
+    done
+
+    # Remove AI boost/helper files
+    for file in "mcp.json" "AGENTS.md" "CLAUDE.md" "QWEN.md" "boost.json" "_ide_helper.php" "opencode.json"; do
+        if [ -f "$file" ]; then
+            rm -f "$file"
+            ((count++))
+        fi
+    done
+
     print_success "Removed ${BOLD}$count${NC} file(s)/folder(s)"
 }
 
 setup_environment() {
-    print_step "5" "6" "Setting up environment..."
-    
     if [ -f ".env.example" ]; then
         cp ".env.example" ".env"
         print_success "Created .env file"
-    fi
-    
-    if php artisan key:generate >/dev/null 2>&1; then
-        print_success "Generated application key"
-    fi
-}
-
-install_dependencies() {
-    if [ "$INSTALL_COMPOSER" = true ]; then
-        print_step "6a" "6" "Installing Composer dependencies..."
-        
-        if composer install --no-interaction >/dev/null 2>&1; then
-            print_success "Composer dependencies installed"
-        else
-            echo -e "\n${RED}Failed to install Composer dependencies${NC}"
-            exit 1
-        fi
-    fi
-    
-    if [ "$INSTALL_NODE" = true ]; then
-        print_step "6b" "6" "Installing Node dependencies ($SELECTED_RUNTIME)..."
-        
-        local cmd="$SELECTED_RUNTIME install"
-        if $cmd >/dev/null 2>&1; then
-            print_success "Node dependencies installed"
-        else
-            echo -e "\n${RED}Failed to install Node dependencies${NC}"
-            exit 1
-        fi
     fi
 }
 
@@ -456,29 +376,16 @@ print_completion() {
     echo ""
     echo -e "  ${GRAY}Project:${NC}  ${BOLD}$PROJECT_NAME${NC}"
     echo -e "  ${GRAY}Branch:${NC}   ${BOLD}$SELECTED_BRANCH${NC}"
-    echo -e "  ${GRAY}Runtime:${NC}  ${BOLD}$SELECTED_RUNTIME${NC}"
-    
-    local deps="none"
-    [ "$INSTALL_COMPOSER" = true ] && [ "$INSTALL_NODE" = true ] && deps="composer, node"
-    [ "$INSTALL_COMPOSER" = true ] && [ "$INSTALL_NODE" = false ] && deps="composer"
-    [ "$INSTALL_COMPOSER" = false ] && [ "$INSTALL_NODE" = true ] && deps="node"
-    echo -e "  ${GRAY}Dependencies:${NC} ${BOLD}$deps${NC}"
     echo ""
-    
-    if [ "$INSTALL_COMPOSER" = false ] || [ "$INSTALL_NODE" = false ]; then
-        echo -e "  ${YELLOW}⚠${NC} ${YELLOW}Some dependencies not installed automatically${NC}"
-        [ "$INSTALL_COMPOSER" = false ] && echo -e "     ${GRAY}• composer install${NC}"
-        [ "$INSTALL_NODE" = false ] && echo -e "     ${GRAY}• $SELECTED_RUNTIME install${NC}"
-        echo ""
-    fi
-    
     echo -e "  ${GRAY}Next steps:${NC}"
     echo -e "     ${CYAN}cd $PROJECT_NAME${NC}"
+    echo -e "     ${CYAN}composer install${NC}"
+    echo -e "     ${CYAN}npm install${NC}"
     echo -e "     ${CYAN}php artisan serve${NC}"
     echo ""
     echo -e "  ${CYAN}Happy coding!${NC}"
     echo ""
-    
+
     INSTALLATION_COMPLETED="true"
 }
 
@@ -493,95 +400,28 @@ show_help() {
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     echo -e "${BOLD}USAGE${NC}"
-    echo -e "  better-laravel new [options]"
-    echo ""
-    echo -e "${BOLD}RUNTIME OPTIONS${NC}"
-    echo -e "  --npm             Use npm (default)"
-    echo -e "  --pnpm            Use pnpm"
-    echo -e "  --yarn            Use yarn"
-    echo -e "  --bun             Use bun"
-    echo ""
-    echo -e "${BOLD}INSTALL OPTIONS${NC}"
-    echo -e "  --install-all     Install both Composer and Node (default)"
-    echo -e "  --install-composer  Install only Composer dependencies"
-    echo -e "  --install-node    Install only Node dependencies"
-    echo -e "  --no-install      Skip dependency installation"
+    echo -e "  better-laravel new"
     echo ""
     echo -e "${BOLD}GENERAL${NC}"
     echo -e "  --help, -h        Show this help message"
     echo ""
     echo -e "${BOLD}EXAMPLES${NC}"
     echo -e "  ${GRAY}better-laravel new${NC}"
-    echo -e "  ${GRAY}better-laravel new --bun${NC}"
-    echo -e "  ${GRAY}better-laravel new --pnpm --install-node${NC}"
-    echo -e "  ${GRAY}better-laravel new --no-install${NC}"
     echo ""
 }
 
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --npm) SELECTED_RUNTIME="npm"; CLI_MODE=true; shift ;;
-            --pnpm) SELECTED_RUNTIME="pnpm"; CLI_MODE=true; shift ;;
-            --yarn) SELECTED_RUNTIME="yarn"; CLI_MODE=true; shift ;;
-            --bun) SELECTED_RUNTIME="bun"; CLI_MODE=true; shift ;;
-            --install-all) INSTALL_COMPOSER=true; INSTALL_NODE=true; CLI_MODE=true; shift ;;
-            --install-composer) INSTALL_COMPOSER=true; INSTALL_NODE=false; CLI_MODE=true; shift ;;
-            --install-node) INSTALL_COMPOSER=false; INSTALL_NODE=true; CLI_MODE=true; shift ;;
-            --no-install) INSTALL_COMPOSER=false; INSTALL_NODE=false; CLI_MODE=true; shift ;;
             --help|-h) show_help; exit 0 ;;
             *) echo -e "${RED}Unknown option: $1${NC}"; show_help; exit 1 ;;
         esac
     done
 }
 
-run_cli_mode() {
-    print_section "Project Configuration"
-    
-    # Get project name
-    while true; do
-        echo ""
-        echo -ne "  ${CYAN}Enter project name${NC}: "
-        read -r PROJECT_NAME
-        
-        if validate_project_name "$PROJECT_NAME"; then
-            print_success "Project name: ${BOLD}$PROJECT_NAME${NC}"
-            break
-        else
-            print_error "Invalid project name"
-        fi
-    done
-    
-    # Get branch
-    get_branch
-    
-    # Confirm
-    echo ""
-    print_success "Runtime: ${BOLD}${SELECTED_RUNTIME:-$DEFAULT_RUNTIME}${NC}"
-    
-    local install_desc="Composer + Node"
-    [ "$INSTALL_COMPOSER" = true ] && [ "$INSTALL_NODE" = false ] && install_desc="Composer only"
-    [ "$INSTALL_COMPOSER" = false ] && [ "$INSTALL_NODE" = true ] && install_desc="Node only"
-    [ "$INSTALL_COMPOSER" = false ] && [ "$INSTALL_NODE" = false ] && install_desc="None"
-    print_success "Installing: ${BOLD}$install_desc${NC}"
-    
-    echo ""
-    echo -ne "  ${CYAN}Proceed?${NC} [y/N]: "
-    read -r confirm
-    
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-        echo ""
-        print_warning "Installation cancelled"
-        echo ""
-        exit 0
-    fi
-}
-
 run_interactive() {
     get_project_name
     get_branch
-    get_runtime
-    get_auto_install
     confirm_installation
 }
 
@@ -592,41 +432,25 @@ run_interactive() {
 main() {
     local cmd="${1:-}"
     shift || true
-    
+
     case "$cmd" in
         new)
             print_banner
-            
-            # Parse CLI arguments
-            [ $# -gt 0 ] && parse_args "$@"
-            
-            # Set defaults for CLI mode
-            if [ "$CLI_MODE" = true ]; then
-                [ -z "$SELECTED_RUNTIME" ] && SELECTED_RUNTIME="$DEFAULT_RUNTIME"
-            else
-                check_dependencies
-            fi
-            
-            # Run workflow
-            if [ "$CLI_MODE" = true ]; then
-                run_cli_mode
-            else
-                run_interactive
-            fi
-            
+            check_dependencies
+            run_interactive
+
             echo ""
             print_section "Installing"
             echo ""
-            
+
             INSTALLATION_STARTED="true"
-            
+
             clone_repository
             enter_project_directory
             checkout_branch
             cleanup_files
             setup_environment
-            install_dependencies
-            
+
             print_completion
             ;;
         help|--help|-h|"")
