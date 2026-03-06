@@ -737,6 +737,11 @@ parse_cli_args() {
                 shift
                 ;;
             --branch)
+                if [ -z "$2" ] || [[ "$2" == -* ]]; then
+                    echo -e "${RED}Error: --branch requires a value${RESET}"
+                    echo -e "${DIM}Run 'better-laravel --help' for usage information${RESET}"
+                    exit 1
+                fi
                 CLI_BRANCH="$2"
                 shift 2
                 ;;
@@ -744,9 +749,14 @@ parse_cli_args() {
                 show_help
                 exit 0
                 ;;
-            *)
+            -*)
                 echo -e "${RED}Unknown option: $1${RESET}"
-                echo -e "${DIM}Run with --help for usage information${RESET}"
+                echo -e "${DIM}Run 'better-laravel --help' to see available options.${RESET}"
+                exit 1
+                ;;
+            *)
+                echo -e "${RED}Unknown argument: $1${RESET}"
+                echo -e "${DIM}Run 'better-laravel --help' to see available options.${RESET}"
                 exit 1
                 ;;
         esac
@@ -798,44 +808,32 @@ apply_cli_options() {
 
 show_help() {
     echo ""
-    echo -e "${BRIGHT_CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${BOLD}${BRIGHT_CYAN}   Better Laravel React Installer${RESET}"
-    echo -e "${BRIGHT_CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${BRIGHT_CYAN}Better Laravel React Installer${RESET}"
     echo ""
-    echo -e "${DIM}A modern installer for Laravel React starter kits${RESET}"
-    echo ""
-    echo -e "${BOLD}USAGE${RESET}"
+    echo -e "${BOLD}Usage${RESET}"
     echo -e "  better-laravel new [options]"
     echo ""
-    echo -e "${BOLD}RUNTIME OPTIONS${RESET}"
-    echo -e "  --npm           Use npm as package manager"
-    echo -e "  --pnpm          Use pnpm as package manager"
-    echo -e "  --yarn          Use yarn as package manager"
-    echo -e "  --bun           Use bun as package manager"
+    echo -e "${BOLD}Runtime Options${RESET}"
+    echo -e "  --npm        Use npm for node dependencies"
+    echo -e "  --pnpm       Use pnpm for node dependencies"
+    echo -e "  --yarn       Use yarn for node dependencies"
+    echo -e "  --bun        Use bun for node dependencies"
     echo ""
-    echo -e "${BOLD}INSTALL OPTIONS${RESET}"
-    echo -e "  --install-all        Install both Composer and Node deps (default)"
-    echo -e "  --install-composer   Install only Composer dependencies"
-    echo -e "  --install-node       Install only Node dependencies"
+    echo -e "${BOLD}Install Options${RESET}"
+    echo -e "  --install-all        Install composer and node dependencies"
+    echo -e "  --install-composer   Install composer dependencies only"
+    echo -e "  --install-node       Install node dependencies only"
     echo -e "  --no-install         Skip dependency installation"
     echo ""
-    echo -e "${BOLD}OTHER OPTIONS${RESET}"
-    echo -e "  --branch <name>  Skip branch selection, use specified branch"
-    echo -e "  --help, -h       Show this help message"
+    echo -e "${BOLD}General Options${RESET}"
+    echo -e "  --branch <name>  Specify branch"
+    echo -e "  --help           Show this help message"
     echo ""
-    echo -e "${BOLD}EXAMPLES${RESET}"
-    echo -e "  ${DIM}# Interactive installation${RESET}"
+    echo -e "${BOLD}Examples${RESET}"
     echo -e "  better-laravel new"
-    echo ""
-    echo -e "  ${DIM}# Use bun runtime${RESET}"
     echo -e "  better-laravel new --bun"
-    echo ""
-    echo -e "  ${DIM}# Use pnpm with Node deps only${RESET}"
     echo -e "  better-laravel new --pnpm --install-node"
-    echo ""
-    echo -e "  ${DIM}# Specify branch and skip install${RESET}"
-    echo -e "  better-laravel new --branch main --no-install"
-    echo ""
+    echo -e "  better-laravel new --no-install"
 }
 
 # ==============================================================================
@@ -914,15 +912,19 @@ main() {
 
     case "$mode" in
         new)
+            # Parse CLI arguments before any output
+            if [ $# -gt 0 ]; then
+                parse_cli_args "$@"
+                apply_cli_options
+            fi
+
             print_banner
 
             # Set up signal traps for Ctrl+C, Ctrl+Z handling
             setup_signal_traps
 
-            # Parse CLI arguments
+            # Run appropriate workflow
             if [ $# -gt 0 ]; then
-                parse_cli_args "$@"
-                apply_cli_options
                 run_cli_mode
             else
                 check_dependencies
