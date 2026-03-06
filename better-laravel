@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# ==============================================================================
+# Better Laravel React Installer - CLI Wrapper
+# ==============================================================================
+# This script provides the 'better-laravel' command interface.
+# Install globally by copying to /usr/local/bin/better-laravel
+# ==============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALLER_SCRIPT="$SCRIPT_DIR/installer.sh"
+
+# Check if installer script exists
+if [ ! -f "$INSTALLER_SCRIPT" ]; then
+    echo "Error: installer.sh not found at $INSTALLER_SCRIPT" >&2
+    exit 1
+fi
+
+# Source the installer library
+source "$INSTALLER_SCRIPT"
+
+# Handle command execution
+if [ $# -eq 0 ]; then
+    # No arguments - show help
+    show_help
+    exit 0
+fi
+
+# Execute main with all arguments
+main "$@"

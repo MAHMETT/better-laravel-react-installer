@@ -1,56 +1,280 @@
 # Troubleshooting
 
-## Common Issues
+Common issues and solutions for the Better Laravel React Installer.
 
-### Missing Dependencies
+## Installation Issues
 
-**Error**: `Missing dependency detected: composer`
+### Command Not Found
 
-**Solution**: Install the missing dependency:
-```bash
-# Install Composer
-curl -sS https://getcomposer.org/installer | php
-sudo mv composer.phar /usr/local/bin/composer
-```
+**Problem:** `better-laravel: command not found`
+
+**Solution:**
+
+1. Verify installation:
+   ```bash
+   ls -la /usr/local/bin/better-laravel
+   ```
+
+2. Ensure `/usr/local/bin` is in PATH:
+   ```bash
+   echo $PATH
+   ```
+
+3. Add to shell config if missing:
+   ```bash
+   export PATH="/usr/local/bin:$PATH"
+   ```
 
 ### Permission Denied
 
-**Error**: `Permission denied`
+**Problem:** `Permission denied` when running installer
 
-**Solution**: Make the script executable:
+**Solution:**
+
 ```bash
-chmod +x install.sh
+chmod +x better-laravel installer.sh
 ```
 
-### Git Clone Fails
+Or for global install:
 
-**Error**: `Failed to clone repository`
-
-**Solutions**:
-1. Check your internet connection
-2. Verify Git is installed: `git --version`
-3. Check GitHub accessibility
-
-### Node Runtime Not Found
-
-**Error**: `Selected runtime not available`
-
-**Solution**: Install the selected runtime or choose another:
 ```bash
-# Install npm (comes with Node.js)
-# Install pnpm
-curl -fsSL https://get.pnpm.io/install.sh | sh -
+sudo chmod +x /usr/local/bin/better-laravel
+```
 
-# Install yarn
+## Dependency Issues
+
+### PHP Not Found
+
+**Problem:** `Missing dependency: php`
+
+**Solution:**
+
+```bash
+# Ubuntu/Debian
+sudo apt install php php-cli php-mbstring php-xml php-zip
+
+# macOS (Homebrew)
+brew install php
+
+# Verify
+php -v
+```
+
+### Composer Not Found
+
+**Problem:** `Missing dependency: composer`
+
+**Solution:**
+
+```bash
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
+
+# Verify
+composer --version
+```
+
+### Git Not Found
+
+**Problem:** `Missing dependency: git`
+
+**Solution:**
+
+```bash
+# Ubuntu/Debian
+sudo apt install git
+
+# macOS
+brew install git
+
+# Verify
+git --version
+```
+
+### No Node Runtime Found
+
+**Problem:** `Missing dependency: npm OR pnpm OR yarn OR bun`
+
+**Solution:**
+
+Install at least one Node runtime:
+
+```bash
+# npm (comes with Node.js)
+# Install Node.js first:
+curl -fsSL https://nodejs.org/setup | sudo bash -
+sudo apt install nodejs
+
+# pnpm
+curl -fsSL https://get.pnpm.io/install.sh | sudo bash -
+
+# yarn
 npm install -g yarn
 
-# Install bun
+# bun
 curl -fsSL https://bun.sh/install | bash
 ```
 
+## Runtime Issues
+
+### Selected Runtime Not Available
+
+**Problem:** Runtime shows as "not found" during selection
+
+**Solution:**
+
+1. Install the runtime:
+   ```bash
+   # For pnpm
+   curl -fsSL https://get.pnpm.io/install.sh | bash -
+
+   # For yarn
+   npm install -g yarn
+
+   # For bun
+   curl -fsSL https://bun.sh/install | bash
+   ```
+
+2. Or select a different runtime that is installed
+
+### Network Timeout During Clone
+
+**Problem:** `Failed to clone repository`
+
+**Solution:**
+
+1. Check internet connection
+2. Verify GitHub accessibility:
+   ```bash
+   ping github.com
+   ```
+3. Try again with verbose output:
+   ```bash
+   git clone https://github.com/MAHMETT/better-laravel-react.git
+   ```
+
+## Installation Failures
+
+### Composer Install Fails
+
+**Problem:** `Failed to install Composer dependencies`
+
+**Solution:**
+
+1. Check PHP version:
+   ```bash
+   php -v
+   ```
+
+2. Verify PHP extensions:
+   ```bash
+   php -m
+   ```
+
+3. Check Composer configuration:
+   ```bash
+   composer diagnose
+   ```
+
+4. Manual install for details:
+   ```bash
+   cd your-project
+   composer install
+   ```
+
+### Node Install Fails
+
+**Problem:** `Failed to install Node dependencies`
+
+**Solution:**
+
+1. Clear cache:
+   ```bash
+   npm cache clean --force
+   # or
+   pnpm store prune
+   # or
+   yarn cache clean
+   ```
+
+2. Check Node version:
+   ```bash
+   node -v
+   ```
+
+3. Manual install for details:
+   ```bash
+   cd your-project
+   npm install
+   ```
+
+### Branch Checkout Fails
+
+**Problem:** `Failed to checkout branch`
+
+**Solution:**
+
+1. Verify branch exists:
+   ```bash
+   git branch -a
+   ```
+
+2. Fetch latest branches:
+   ```bash
+   git fetch --all
+   ```
+
+3. Try manual checkout:
+   ```bash
+   cd your-project
+   git checkout branch-name
+   ```
+
+## TUI Display Issues
+
+### Broken Characters Display
+
+**Problem:** Shows `` or garbled characters
+
+**Solution:**
+
+1. Ensure terminal supports UTF-8:
+   ```bash
+   echo $LANG
+   ```
+
+2. Set locale if needed:
+   ```bash
+   export LANG=en_US.UTF-8
+   export LC_ALL=en_US.UTF-8
+   ```
+
+3. Try a different terminal emulator
+
+### Colors Not Displaying
+
+**Problem:** ANSI colors not showing correctly
+
+**Solution:**
+
+1. Check terminal color support:
+   ```bash
+   echo -e "\033[31mRed\033[0m"
+   ```
+
+2. Set COLORTERM if needed:
+   ```bash
+   export COLORTERM=truecolor
+   ```
+
 ## Getting Help
 
-If you encounter issues not listed here:
-1. Check the error message carefully
-2. Verify all prerequisites are installed
-3. Ensure you have a stable internet connection
+If issues persist:
+
+1. Check the [documentation](./README.md)
+2. Review GitHub issues
+3. Open a new issue with:
+   - Error message
+   - OS and shell version
+   - PHP/Composer/Node versions
+   - Steps to reproduce

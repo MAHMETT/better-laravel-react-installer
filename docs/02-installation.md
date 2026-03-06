@@ -1,31 +1,130 @@
 # Installation
 
-## Prerequisites
+Install the Better Laravel React Installer globally or use it locally.
 
-Ensure the following are installed on your system:
+## Quick Install
 
-1. **PHP** (version 8.1 or higher recommended)
-2. **Composer** (latest stable version)
-3. **Node.js** with at least one package manager:
-   - npm (comes with Node.js)
-   - pnpm
-   - yarn
-   - bun
-
-## Quick Start
+### Bash (Universal)
 
 ```bash
-# Clone the installer repository
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.sh | bash
+```
+
+### Zsh
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.zsh | zsh
+```
+
+### Fish
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.fish | fish
+```
+
+## Installation Methods
+
+For detailed shell-specific instructions, see [Shell Installation Guide](./07-shell-installation.md).
+
+### Option 1: Universal Script (Recommended)
+
+Automatic installation with PATH configuration:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.sh | bash
+```
+
+This will:
+- Download the latest installer
+- Install to `/usr/local/bin`
+- Configure your shell's PATH if needed
+
+### Option 2: Manual Installation
+
+Clone and install manually:
+
+```bash
+# Clone the repository
 git clone https://github.com/MAHMETT/better-laravel-react-installer.git
 cd better-laravel-react-installer
 
-# Make the script executable
-chmod +x install.sh
+# Make scripts executable
+chmod +x better-laravel installer.sh
 
-# Run the installer
-./install.sh
+# Move to global path
+sudo mv better-laravel /usr/local/bin/
 ```
 
-## Verification
+### Option 3: Local Use
 
-The script will automatically check for required dependencies on startup. If any dependency is missing, you'll see an error message indicating what needs to be installed.
+Use without installing globally:
+
+```bash
+# Clone the repository
+git clone https://github.com/MAHMETT/better-laravel-react-installer.git
+cd better-laravel-react-installer
+
+# Run directly
+./better-laravel new
+```
+
+## Verify Installation
+
+Check that the command is available:
+
+```bash
+better-laravel --help
+```
+
+Expected output:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Better Laravel React Installer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+USAGE
+  better-laravel new [options]
+...
+```
+
+## Shell Configuration
+
+After installation, ensure your shell can find the command:
+
+### Bash
+
+```bash
+echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Zsh
+
+```bash
+echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Fish
+
+```fish
+fish_add_path /usr/local/bin
+```
+
+## Prerequisites
+
+Before installing, ensure you have:
+
+| Tool | Install Command |
+|------|-----------------|
+| Git | `sudo apt install git` (Ubuntu) / `brew install git` (macOS) |
+| Curl | `sudo apt install curl` (Ubuntu) / `brew install curl` (macOS) |
+
+The installer itself has no runtime dependencies. PHP, Composer, and Node.js are only required when running the installer to create Laravel projects.
+
+## Next Steps
+
+- [Usage Guide](./03-usage.md) — Start using the installer
+- [Shell Installation](./07-shell-installation.md) — Detailed shell-specific instructions
+- [Troubleshooting](./05-troubleshooting.md) — Common installation issues
