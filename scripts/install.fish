@@ -3,8 +3,6 @@
 # Install script for fish shell
 # =================================================================
 
-set -e
-
 set -l INSTALL_DIR "/usr/local/bin"
 set -l INSTALLER_NAME "better-laravel"
 set -l RAW_URL "https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main"
@@ -64,8 +62,10 @@ function detect_shell
     if command -q ps
         set -l parent_pid (ps -o ppid= -p $process_id 2>/dev/null | string trim)
         if test -n "$parent_pid"
-            set -l parent_shell (ps -o comm= -p "$parent_pid" 2>/dev/null || echo "fish")
-            set shell_name (basename "$parent_shell")
+            set -l parent_shell (ps -o comm= -p "$parent_pid" 2>/dev/null)
+            if test -n "$parent_shell"
+                set shell_name (basename "$parent_shell")
+            end
         end
     end
     

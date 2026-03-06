@@ -56,28 +56,33 @@ print_info() {
 detect_shell() {
     local shell_name="bash"
     
-    # Try to get parent shell from process tree
-    if command -v ps &> /dev/null; then
-        # Get parent process name
-        local parent_pid=$(ps -o ppid= -p $$ 2>/dev/null | tr -d ' ')
+    # Check SHELL environment variable first
+    if [ -n "$SHELL" ]; then
+        shell_name=$(basename "$SHELL")
+    fi
+    
+    # Try to get parent process name
+    if command -v ps >/dev/null 2>&1; then
+        local parent_pid
+        parent_pid=$(ps -o ppid= -p $$ 2>/dev/null | tr -d ' ')
         if [ -n "$parent_pid" ]; then
-            shell_name=$(ps -o comm= -p "$parent_pid" 2>/dev/null || echo "bash")
-            shell_name=$(basename "$shell_name")
+            local parent_shell
+            parent_shell=$(ps -o comm= -p "$parent_pid" 2>/dev/null)
+            if [ -n "$parent_shell" ]; then
+                shell_name=$(basename "$parent_shell")
+            fi
         fi
     fi
     
-    # Also check SHELL environment variable
-    if [ -n "$SHELL" ]; then
-        local shell_from_env=$(basename "$SHELL")
-        # Use shell from env if it's a known shell
-        case "$shell_from_env" in
-            bash|zsh|fish|ksh|csh|tcsh|sh)
-                shell_name="$shell_from_env"
-                ;;
-        esac
-    fi
-    
-    echo "$shell_name"
+    # Validate shell name
+    case "$shell_name" in
+        bash|zsh|fish|ksh|csh|tcsh|sh)
+            echo "$shell_name"
+            ;;
+        *)
+            echo "bash"
+            ;;
+    esac
 }
 
 # Check if running as root
@@ -91,7 +96,7 @@ check_root() {
 
 # Check if sudo is available
 check_sudo() {
-    if command -v sudo &> /dev/null; then
+    if command -v sudo >/dev/null 2>&1; then
         return 0
     else
         return 1
@@ -111,16 +116,17 @@ check_install_dir() {
 
 # Download installer
 download_installer() {
-    local temp_dir=$(mktemp -d)
+    local temp_dir
+    temp_dir=$(mktemp -d)
     local temp_script="$temp_dir/$INSTALLER_NAME"
     local download_url="$RAW_URL/$INSTALLER_NAME"
     
     print_step "Downloading installer from GitHub..."
     
     # Try curl first, then wget
-    if command -v curl &> /dev/null; then
+    if command -v curl >/dev/null 2>&1; then
         echo -e "  ${GRAY}Using curl to download from: $download_url${NC}"
-        if curl -fsSL -o "$temp_script" "$download_url"; then
+        if curl -fsSL -o "$temp_script" "$download_url" 2>/dev/null; then
             print_success "Downloaded using curl"
         else
             print_error "Failed to download with curl"
@@ -128,9 +134,9 @@ download_installer() {
             rm -rf "$temp_dir"
             return 1
         fi
-    elif command -v wget &> /dev/null; then
+    elif command -v wget >/dev/null 2>&1; then
         echo -e "  ${GRAY}Using wget to download from: $download_url${NC}"
-        if wget -q -O "$temp_script" "$download_url"; then
+        if wget -q -O "$temp_script" "$download_url" 2>/dev/null; then
             print_success "Downloaded using wget"
         else
             print_error "Failed to download with wget"
@@ -163,12 +169,10 @@ install_to_system() {
     print_step "Installing to $INSTALL_DIR..."
     
     if check_root; then
-        # Already root
         cp "$source_file" "$INSTALL_DIR/$INSTALLER_NAME"
         chmod +x "$INSTALL_DIR/$INSTALLER_NAME"
         print_success "Installed to $INSTALL_DIR/$INSTALLER_NAME"
     elif check_sudo; then
-        # Use sudo
         sudo cp "$source_file" "$INSTALL_DIR/$INSTALLER_NAME"
         sudo chmod +x "$INSTALL_DIR/$INSTALLER_NAME"
         print_success "Installed to $INSTALL_DIR/$INSTALLER_NAME (with sudo)"
@@ -224,7 +228,8 @@ check_path() {
 # Add to PATH in shell config
 add_to_path() {
     local shell_name="$1"
-    local shell_config=$(get_shell_config "$shell_name")
+    local shell_config
+    shell_config=$(get_shell_config "$shell_name")
     
     print_warning "$INSTALL_DIR is not in your PATH"
     echo ""
@@ -236,7 +241,6 @@ add_to_path() {
     
     case "$shell_name" in
         fish)
-            # Fish shell uses different syntax
             if [ -f "$shell_config" ]; then
                 if ! grep -q "fish_add_path.*$INSTALL_DIR" "$shell_config" 2>/dev/null; then
                     echo "" >> "$shell_config"
@@ -251,7 +255,6 @@ add_to_path() {
             fi
             ;;
         csh|tcsh)
-            # C shell syntax
             if [ -f "$shell_config" ]; then
                 if ! grep -q "set path.*$INSTALL_DIR" "$shell_config" 2>/dev/null; then
                     echo "" >> "$shell_config"
@@ -266,7 +269,6 @@ add_to_path() {
             fi
             ;;
         *)
-            # Bash, zsh, ksh, etc.
             if [ -f "$shell_config" ]; then
                 if ! grep -q "export PATH.*$INSTALL_DIR" "$shell_config" 2>/dev/null; then
                     echo "" >> "$shell_config"
@@ -305,7 +307,8 @@ show_post_install() {
         echo "To use the installer, add it to your PATH:"
         echo ""
         
-        local shell_config=$(get_shell_config "$shell_name")
+        local shell_config
+        shell_config=$(get_shell_config "$shell_name")
         
         case "$shell_name" in
             fish)
@@ -358,8 +361,8 @@ show_manual_install() {
     echo -e "   ${GRAY}better-laravel --help${NC}"
     echo ""
     
-    # Shell-specific PATH instructions
-    local shell_config=$(get_shell_config "$shell_name")
+    local shell_config
+    shell_config=$(get_shell_config "$shell_name")
     
     echo -e "${CYAN}If /usr/local/bin is not in your PATH, add it:${NC}"
     echo ""
@@ -387,7 +390,8 @@ main() {
     print_banner
     
     # Detect shell
-    local shell_name=$(detect_shell)
+    local shell_name
+    shell_name=$(detect_shell)
     print_info "Detected shell: $shell_name"
     
     # Check install directory
@@ -399,10 +403,13 @@ main() {
     
     # Download installer
     local temp_script
-    temp_script=$(download_installer)
+    temp_script=$(download_installer) || {
+        print_error "Download failed"
+        exit 1
+    }
     
     if [ -z "$temp_script" ] || [ ! -f "$temp_script" ]; then
-        print_error "Download failed"
+        print_error "Downloaded file not found"
         exit 1
     fi
     
