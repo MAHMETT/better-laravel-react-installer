@@ -16,11 +16,12 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 GRAY='\033[0;90m'
 NC='\033[0m'
+BOLD='\033[1m'
 
 # Configuration
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
-REPO_URL="https://github.com/MAHMETT/better-laravel-react-installer.git"
 INSTALLER_NAME="better-laravel"
+RAW_URL="https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main"
 
 print_banner() {
     echo ""
@@ -51,31 +52,29 @@ print_info() {
     echo -e "${BLUE}ℹ${NC} $1"
 }
 
-# Detect shell
+# Detect shell from parent process
 detect_shell() {
-    local shell_name=""
+    local shell_name="bash"
     
-    # Check parent process
-    if [ -n "$SHELL" ]; then
-        shell_name=$(basename "$SHELL")
-    fi
-    
-    # Check current shell
-    if [ -z "$shell_name" ]; then
-        shell_name=$(basename "$0")
-    fi
-    
-    # Check process tree
-    if [ -z "$shell_name" ] || [ "$shell_name" = "sh" ]; then
-        local ppid_shell=$(ps -p $$ -o comm= 2>/dev/null || echo "")
-        if [ -n "$ppid_shell" ]; then
-            shell_name=$(basename "$ppid_shell")
+    # Try to get parent shell from process tree
+    if command -v ps &> /dev/null; then
+        # Get parent process name
+        local parent_pid=$(ps -o ppid= -p $$ 2>/dev/null | tr -d ' ')
+        if [ -n "$parent_pid" ]; then
+            shell_name=$(ps -o comm= -p "$parent_pid" 2>/dev/null || echo "bash")
+            shell_name=$(basename "$shell_name")
         fi
     fi
     
-    # Default to bash
-    if [ -z "$shell_name" ]; then
-        shell_name="bash"
+    # Also check SHELL environment variable
+    if [ -n "$SHELL" ]; then
+        local shell_from_env=$(basename "$SHELL")
+        # Use shell from env if it's a known shell
+        case "$shell_from_env" in
+            bash|zsh|fish|ksh|csh|tcsh|sh)
+                shell_name="$shell_from_env"
+                ;;
+        esac
     fi
     
     echo "$shell_name"
@@ -114,20 +113,24 @@ check_install_dir() {
 download_installer() {
     local temp_dir=$(mktemp -d)
     local temp_script="$temp_dir/$INSTALLER_NAME"
+    local download_url="$RAW_URL/$INSTALLER_NAME"
     
     print_step "Downloading installer from GitHub..."
     
     # Try curl first, then wget
     if command -v curl &> /dev/null; then
-        if curl -fsSL -o "$temp_script" "https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/$INSTALLER_NAME" 2>/dev/null; then
+        echo -e "  ${GRAY}Using curl to download from: $download_url${NC}"
+        if curl -fsSL -o "$temp_script" "$download_url"; then
             print_success "Downloaded using curl"
         else
             print_error "Failed to download with curl"
+            echo -e "  ${GRAY}URL: $download_url${NC}"
             rm -rf "$temp_dir"
             return 1
         fi
     elif command -v wget &> /dev/null; then
-        if wget -q -O "$temp_script" "https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/$INSTALLER_NAME" 2>/dev/null; then
+        echo -e "  ${GRAY}Using wget to download from: $download_url${NC}"
+        if wget -q -O "$temp_script" "$download_url"; then
             print_success "Downloaded using wget"
         else
             print_error "Failed to download with wget"
@@ -136,6 +139,13 @@ download_installer() {
         fi
     else
         print_error "Neither curl nor wget is available"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+    
+    # Verify download
+    if [ ! -f "$temp_script" ] || [ ! -s "$temp_script" ]; then
+        print_error "Downloaded file is empty or missing"
         rm -rf "$temp_dir"
         return 1
     fi
@@ -170,8 +180,8 @@ install_to_system() {
     return 0
 }
 
-# Generate shell-specific instructions
-generate_shell_instructions() {
+# Generate shell-specific config path
+get_shell_config() {
     local shell_name="$1"
     local shell_config=""
     
@@ -201,33 +211,41 @@ generate_shell_instructions() {
 
 # Check if PATH includes install directory
 check_path() {
-    if [[ ":$PATH:" == *":$INSTALL_DIR:"* ]]; then
-        return 0
-    else
-        return 1
-    fi
+    case ":$PATH:" in
+        *":$INSTALL_DIR:"*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 # Add to PATH in shell config
 add_to_path() {
     local shell_name="$1"
-    local shell_config=$(generate_shell_instructions "$shell_name")
+    local shell_config=$(get_shell_config "$shell_name")
     
     print_warning "$INSTALL_DIR is not in your PATH"
     echo ""
     echo -e "${CYAN}Adding $INSTALL_DIR to PATH in $shell_config${NC}"
     echo ""
     
+    # Create config directory if needed
+    mkdir -p "$(dirname "$shell_config")"
+    
     case "$shell_name" in
         fish)
             # Fish shell uses different syntax
             if [ -f "$shell_config" ]; then
                 if ! grep -q "fish_add_path.*$INSTALL_DIR" "$shell_config" 2>/dev/null; then
+                    echo "" >> "$shell_config"
+                    echo "# Better Laravel React Installer" >> "$shell_config"
                     echo "fish_add_path $INSTALL_DIR" >> "$shell_config"
                     print_success "Added to $shell_config"
                 fi
             else
-                mkdir -p "$(dirname "$shell_config")"
+                echo "# Better Laravel React Installer" > "$shell_config"
                 echo "fish_add_path $INSTALL_DIR" > "$shell_config"
                 print_success "Created $shell_config"
             fi
@@ -236,10 +254,13 @@ add_to_path() {
             # C shell syntax
             if [ -f "$shell_config" ]; then
                 if ! grep -q "set path.*$INSTALL_DIR" "$shell_config" 2>/dev/null; then
+                    echo "" >> "$shell_config"
+                    echo "# Better Laravel React Installer" >> "$shell_config"
                     echo "set path = ($INSTALL_DIR \$path)" >> "$shell_config"
                     print_success "Added to $shell_config"
                 fi
             else
+                echo "# Better Laravel React Installer" > "$shell_config"
                 echo "set path = ($INSTALL_DIR \$path)" > "$shell_config"
                 print_success "Created $shell_config"
             fi
@@ -255,7 +276,7 @@ add_to_path() {
                 fi
             else
                 echo "# Better Laravel React Installer" > "$shell_config"
-                echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$shell_config"
+                echo "export PATH=\"$INSTALL_DIR:\$PATH\"" > "$shell_config"
                 print_success "Created $shell_config"
             fi
             ;;
@@ -284,7 +305,7 @@ show_post_install() {
         echo "To use the installer, add it to your PATH:"
         echo ""
         
-        local shell_config=$(generate_shell_instructions "$shell_name")
+        local shell_config=$(get_shell_config "$shell_name")
         
         case "$shell_name" in
             fish)
@@ -338,7 +359,7 @@ show_manual_install() {
     echo ""
     
     # Shell-specific PATH instructions
-    local shell_config=$(generate_shell_instructions "$shell_name")
+    local shell_config=$(get_shell_config "$shell_name")
     
     echo -e "${CYAN}If /usr/local/bin is not in your PATH, add it:${NC}"
     echo ""
@@ -377,7 +398,8 @@ main() {
     fi
     
     # Download installer
-    local temp_script=$(download_installer)
+    local temp_script
+    temp_script=$(download_installer)
     
     if [ -z "$temp_script" ] || [ ! -f "$temp_script" ]; then
         print_error "Download failed"
@@ -391,8 +413,13 @@ main() {
         exit 1
     fi
     
-    # Cleanup
+    # Cleanup temp files
     rm -rf "$(dirname "$temp_script")"
+    
+    # Check PATH and offer to add it
+    if ! check_path; then
+        add_to_path "$shell_name"
+    fi
     
     # Show post-installation
     show_post_install "$shell_name"
