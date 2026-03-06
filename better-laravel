@@ -20,7 +20,7 @@ readonly DEFAULT_RUNTIME="npm"
 # Branch options: "Display Title|branch-name"
 readonly -a BRANCHES=(
     "main|main"
-    "+ visitor management|visitor-management"
+    "+ visitor management|analytics-visitor"
 )
 
 # Available runtimes
