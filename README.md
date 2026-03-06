@@ -1,110 +1,93 @@
 # Better Laravel React Installer
 
-A CLI installer for the Better Laravel React starter kit.
+A minimal, cross-platform CLI installer for the Better Laravel React starter kit.
 
-## Overview
+## Installation
 
-This repository contains a CLI tool to set up Laravel projects with React integration. It provides an interactive installer with support for multiple Node.js package managers.
-
-## Features
-
-- Interactive TUI installer
-- Runtime selection (npm, pnpm, yarn, bun)
-- Automated dependency installation
-- CLI flags support
-- Customizable installation workflow
-
-## Installing the CLI Installer
-
-### Install with one command
+### Bash
 
 ```bash
-git clone https://github.com/MAHMETT/better-laravel-react-installer.git /tmp/better-laravel && \
-cd /tmp/better-laravel && \
-sudo cp better-laravel installer.sh /usr/local/bin/ && \
-sudo chmod +x /usr/local/bin/better-laravel /usr/local/bin/installer.sh && \
-rm -rf /tmp/better-laravel
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.sh | bash
 ```
 
-### Add the path to your shell (if needed)
+### Zsh
 
-**Bash:**
 ```bash
-echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.zsh | zsh
 ```
 
-**Zsh:**
+### Fish
+
 ```bash
-echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.fish | fish
 ```
-
-**Fish:**
-```bash
-echo 'fish_add_path /usr/local/bin' >> ~/.config/fish/config.fish
-source ~/.config/fish/config.fish
-```
-
-This makes `better-laravel` available globally.
 
 ## Usage
 
-```bash
-better-laravel
-```
-
-Displays help documentation.
+### Interactive Installation
 
 ```bash
 better-laravel new
 ```
 
-Starts the interactive installer.
+### CLI Mode
 
-Example workflow:
-
-```
-~/Projects
-$ better-laravel new
-
-Enter project name: testing
+```bash
+better-laravel new --bun
+better-laravel new --pnpm --install-node
+better-laravel new --no-install
 ```
 
-Creates project at: `~/Projects/testing`
+## Workflow
 
-## Command Options
+1. Run `better-laravel new` in your projects directory
+2. Enter a project name (e.g., `my-app`)
+3. Select a branch
+4. Choose a runtime (npm/pnpm/yarn/bun)
+5. Select packages to install
+6. The installer clones, configures, and sets up your project
 
-### Runtime Flags
+Result: `~/Projects/my-app` ready for development.
 
-| Flag | Description |
-|------|-------------|
-| `--npm` | Use npm runtime |
-| `--pnpm` | Use pnpm runtime |
-| `--yarn` | Use yarn runtime |
-| `--bun` | Use bun runtime |
+## CLI Options
 
-### Install Flags
-
-| Flag | Description |
-|------|-------------|
-| `--install-all` | Install composer and node dependencies |
-| `--install-composer` | Install composer dependencies only |
-| `--install-node` | Install node dependencies only |
-| `--no-install` | Skip dependency installation |
-
-### General Flags
+### Runtime
 
 | Flag | Description |
 |------|-------------|
-| `--help` | Show help information |
+| `--npm` | Use npm (default) |
+| `--pnpm` | Use pnpm |
+| `--yarn` | Use yarn |
+| `--bun` | Use bun |
+
+### Installation
+
+| Flag | Description |
+|------|-------------|
+| `--install-all` | Install Composer + Node (default) |
+| `--install-composer` | Install Composer only |
+| `--install-node` | Install Node only |
+| `--no-install` | Skip installation |
+
+### General
+
+| Flag | Description |
+|------|-------------|
+| `--help`, `-h` | Show help |
 
 ## Examples
 
 ```bash
+# Interactive installation
 better-laravel new
+
+# Use bun runtime
 better-laravel new --bun
+
+# pnpm with Node deps only
 better-laravel new --pnpm --install-node
+
+# Skip dependency installation
 better-laravel new --no-install
 ```
 
@@ -113,7 +96,7 @@ better-laravel new --no-install
 - PHP 8.1+
 - Composer
 - Git
-- Node.js (npm, pnpm, yarn, or bun)
+- Node.js + package manager (npm/pnpm/yarn/bun)
 
 ## License
 
