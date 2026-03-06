@@ -3,7 +3,7 @@
 # ==============================================================================
 # Better Laravel React Installer - Single-File CLI
 # ==============================================================================
-# Version: 2.0.0
+# Version: 1
 # A minimal, modern, and robust installer for the Better Laravel React starter kit.
 # Supports bash, zsh, and fish shells with clean TUI-based interactive experience.
 # ==============================================================================
