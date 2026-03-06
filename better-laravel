@@ -395,7 +395,7 @@ clone_repository() {
 checkout_branch() {
     print_step "3" "Switching to branch '$SELECTED_BRANCH'..."
     
-    if ! git -C "$PROJECT_NAME" checkout "$SELECTED_BRANCH" >/dev/null 2>&1; then
+    if ! git checkout "$SELECTED_BRANCH" >/dev/null 2>&1; then
         echo ""
         print_error "Failed to checkout branch '$SELECTED_BRANCH'"
         echo ""
@@ -410,18 +410,18 @@ cleanup_files() {
     
     local count=0
     
-    # Remove folders from project directory
+    # Remove folders
     for folder in "${CLEANUP_FOLDERS[@]}"; do
-        if [ -d "$PROJECT_NAME/$folder" ]; then
-            rm -rf "$PROJECT_NAME/$folder"
+        if [ -d "$folder" ]; then
+            rm -rf "$folder"
             ((count++))
         fi
     done
     
-    # Remove files from project directory
+    # Remove files
     for file in "${CLEANUP_FILES[@]}"; do
-        if [ -f "$PROJECT_NAME/$file" ]; then
-            rm -f "$PROJECT_NAME/$file"
+        if [ -f "$file" ]; then
+            rm -f "$file"
             ((count++))
         fi
     done
@@ -432,7 +432,7 @@ cleanup_files() {
 setup_environment() {
     print_step "5" "Preparing environment file..."
     
-    if [ ! -f "$PROJECT_NAME/.env.example" ]; then
+    if [ ! -f ".env.example" ]; then
         echo ""
         print_error ".env.example not found"
         print_error "Cannot create environment file"
@@ -440,7 +440,7 @@ setup_environment() {
         exit 1
     fi
     
-    if ! cp "$PROJECT_NAME/.env.example" "$PROJECT_NAME/.env"; then
+    if ! cp ".env.example" ".env"; then
         echo ""
         print_error "Failed to create .env file"
         echo ""
@@ -455,14 +455,6 @@ install_dependencies() {
         print_step "6" "Skipping dependency installation..."
         print_success "Dependency installation skipped"
         return
-    fi
-    
-    # Change to project directory for dependency installation
-    if ! cd "$PROJECT_NAME" 2>/dev/null; then
-        echo ""
-        print_error "Failed to enter project directory"
-        echo ""
-        exit 1
     fi
     
     print_step "6" "Installing dependencies..."
@@ -568,12 +560,26 @@ run_installation() {
     
     # Stage 3: Main Installation Process
     clone_repository
+    enter_project_directory
     checkout_branch
     cleanup_files
     setup_environment
     install_dependencies
     
     print_completion
+}
+
+enter_project_directory() {
+    print_step "2" "Entering project directory..."
+    
+    if ! cd "$PROJECT_NAME" 2>/dev/null; then
+        echo ""
+        print_error "Failed to enter project directory"
+        echo ""
+        exit 1
+    fi
+    
+    print_success "Changed to project directory"
 }
 
 # ==============================================================================
