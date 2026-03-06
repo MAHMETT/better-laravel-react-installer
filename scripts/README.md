@@ -16,24 +16,24 @@ Platform-specific installation scripts for different shells.
 
 ```bash
 # Download and run
-curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.sh | bash
 
 # Or with custom install directory
-curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.sh | bash -s -- --install-dir /opt/bin
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.sh | bash -s -- --install-dir /opt/bin
 ```
 
 ### Zsh
 
 ```bash
 # Download and run with zsh
-curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.zsh | zsh
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.zsh | zsh
 ```
 
 ### Fish
 
 ```bash
 # Download and run with fish
-curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.fish | fish
+curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.fish | fish
 ```
 
 ## Manual Installation

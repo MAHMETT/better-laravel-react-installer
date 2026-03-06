@@ -10,7 +10,7 @@ set -e
 
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 INSTALLER_NAME="better-laravel"
-RAW_URL="https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main"
+RAW_URL="https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main"
 
 # Colors
 RED='%F{red}'

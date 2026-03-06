@@ -21,9 +21,9 @@ Complete documentation for the Better Laravel React CLI installer.
 
 | Shell | Command |
 |-------|---------|
-| **Bash** | `curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.sh \| bash` |
-| **Zsh** | `curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.zsh \| zsh` |
-| **Fish** | `curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main/scripts/install.fish \| fish` |
+| **Bash** | `curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.sh \| bash` |
+| **Zsh** | `curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.zsh \| zsh` |
+| **Fish** | `curl -fsSL https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main/scripts/install.fish \| fish` |
 
 ### Run Installer
 

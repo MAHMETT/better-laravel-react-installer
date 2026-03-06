@@ -5,7 +5,7 @@
 
 set -l INSTALL_DIR "/usr/local/bin"
 set -l INSTALLER_NAME "better-laravel"
-set -l RAW_URL "https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/main"
+set -l RAW_URL "https://raw.githubusercontent.com/MAHMETT/better-laravel-react-installer/refs/heads/main"
 
 # ANSI escape codes
 set -l RED "\e[31m"
